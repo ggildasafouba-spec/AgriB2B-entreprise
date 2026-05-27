@@ -1,0 +1,286 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { ordersApi, productsApi } from '../../../lib/api';
+import { useAuth } from '../../../lib/auth-context';
+import toast from 'react-hot-toast';
+import { ShoppingCart, Info } from 'lucide-react';
+
+const COMPANY_COMMISSION = 0.05;
+const INDIVIDUAL_COMMISSION = 0.10;
+
+const STATUS_LABELS: any = {
+  PENDING:   { label: 'En attente',  color: 'bg-yellow-100 text-yellow-700' },
+  CONFIRMED: { label: 'Confirmée',   color: 'bg-blue-100 text-blue-700' },
+  SHIPPED:   { label: 'Expédiée',    color: 'bg-purple-100 text-purple-700' },
+  DELIVERED: { label: 'Livrée',      color: 'bg-green-100 text-green-700' },
+  CANCELLED: { label: 'Annulée',     color: 'bg-red-100 text-red-700' },
+  DISPUTED:  { label: 'Litige',      color: 'bg-orange-100 text-orange-700' },
+};
+
+function fmt(n: number) {
+  return n.toLocaleString('fr-FR') + ' FCFA';
+}
+
+export default function OrdersPage() {
+  const { user } = useAuth();
+  const [orders, setOrders]   = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [cart, setCart]       = useState<{ productId: string; quantity: number }[]>([]);
+
+  const load = () => {
+    Promise.all([ordersApi.getAll(), productsApi.getAll()])
+      .then(([o, p]) => { setOrders(o.data); setProducts(p.data); })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); }, []);
+
+  // ── Panier ─────────────────────────────────────────────────────────────────
+  const addToCart = (productId: string) => {
+    setCart(prev => {
+      const ex = prev.find(i => i.productId === productId);
+      if (ex) return prev.map(i => i.productId === productId ? { ...i, quantity: i.quantity + 1 } : i);
+      return [...prev, { productId, quantity: 1 }];
+    });
+  };
+
+  const removeFromCart = (productId: string) =>
+    setCart(prev => prev.filter(i => i.productId !== productId));
+
+  const cartTotal = cart.reduce((sum, item) => {
+    const p = products.find(x => x.id === item.productId);
+    return sum + (p?.price || 0) * item.quantity;
+  }, 0);
+
+  const cartCommission = Math.round(cart.reduce((sum, item) => {
+    const p = products.find(x => x.id === item.productId);
+    const rate = p?.seller?.accountType === 'COMPANY' ? COMPANY_COMMISSION : INDIVIDUAL_COMMISSION;
+    return sum + (p?.price || 0) * item.quantity * rate;
+  }, 0) * 100) / 100;
+  const cartSellerAmount = Math.round((cartTotal - cartCommission) * 100) / 100;
+
+  const handleOrder = async () => {
+    if (cart.length === 0) return toast.error('Panier vide');
+    try {
+      await ordersApi.create({ items: cart });
+      toast.success('Commande passée avec succès');
+      setCart([]);
+      setShowForm(false);
+      load();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur');
+    }
+  };
+
+  const updateStatus = async (id: string, status: string) => {
+    try {
+      await ordersApi.updateStatus(id, status);
+      toast.success('Statut mis à jour');
+      load();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur');
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">Commandes</h2>
+        {user?.role === 'BUYER' && (
+          <button onClick={() => setShowForm(!showForm)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+            <ShoppingCart className="w-4 h-4" /> Nouvelle commande
+          </button>
+        )}
+      </div>
+
+      {/* Bandeau info commission */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6 flex items-start gap-3">
+        <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+        <p className="text-sm text-amber-800">
+          <span className="font-semibold">Commission plateforme :</span> 5% pour les entreprises, 10% pour les particuliers.
+          Le vendeur reçoit le montant après prélèvement de la commission.
+        </p>
+      </div>
+
+      {/* Formulaire nouvelle commande */}
+      {showForm && (
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border border-green-100">
+          <h3 className="font-bold text-lg mb-4">Sélectionner des produits</h3>
+          <div className="grid md:grid-cols-3 gap-4 mb-4">
+            {products.map(p => (
+              <div key={p.id} className="border rounded-xl p-3 hover:border-green-400 transition">
+                <p className="font-semibold text-gray-900">{p.name}</p>
+                <p className="text-sm text-green-700 font-medium">{fmt(p.price)}/{p.unit}</p>
+                <p className="text-xs text-gray-400">Stock: {p.stock?.quantity} {p.unit}</p>
+                {p.minOrderQty > 1 && (
+                  <p className="text-xs text-amber-600">Min: {p.minOrderQty} {p.unit}</p>
+                )}
+                <button onClick={() => addToCart(p.id)}
+                  className="mt-2 w-full px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-sm font-medium">
+                  + Ajouter
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {cart.length > 0 && (
+            <div className="border-t pt-4">
+              <h4 className="font-semibold mb-3">Récapitulatif de commande</h4>
+              <div className="space-y-2 mb-4">
+                  {cart.map(item => {
+                  const p = products.find(x => x.id === item.productId);
+                  return (
+                    <div key={item.productId} className="flex justify-between items-center text-sm bg-gray-50 rounded-lg px-3 py-2">
+                      <span className="font-medium">{p?.name} × {item.quantity} {p?.unit}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-green-700 font-semibold">{fmt((p?.price || 0) * item.quantity)}</span>
+                        <button onClick={() => removeFromCart(item.productId)}
+                          className="text-red-400 hover:text-red-600 text-xs">✕</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Détail financier */}
+                <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Sous-total</span>
+                  <span className="font-medium">{fmt(cartTotal)}</span>
+                </div>
+                <div className="flex justify-between text-amber-700">
+                  <span>Commission plateforme</span>
+                  <span className="font-medium">− {fmt(cartCommission)}</span>
+                </div>
+                <div className="flex justify-between text-gray-500 text-xs">
+                  <span>Montant reversé au vendeur</span>
+                  <span>{fmt(cartSellerAmount)}</span>
+                </div>
+                <div className="border-t pt-2 flex justify-between font-bold text-base">
+                  <span>Total à payer</span>
+                  <span className="text-green-700">{fmt(cartTotal)}</span>
+                </div>
+              </div>
+
+              <button onClick={handleOrder}
+                className="mt-4 w-full px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700">
+                Confirmer la commande — {fmt(cartTotal)}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Liste des commandes */}
+      {loading ? (
+        <p className="text-gray-500">Chargement...</p>
+      ) : (
+        <div className="space-y-4">
+          {orders.map(order => {
+            const fallbackRate = order.seller?.accountType === 'COMPANY' ? 0.05 : 0.10;
+            const commission   = order.escrow?.commission ?? Math.round(order.totalPrice * fallbackRate * 100) / 100;
+            const sellerAmount = order.escrow?.sellerAmount ?? Math.round((order.totalPrice - commission) * 100) / 100;
+
+            return (
+              <div key={order.id} className="bg-white rounded-xl shadow p-5">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-bold text-gray-900">Commande #{order.id.slice(0, 8)}</p>
+                    <p className="text-sm text-gray-500">
+                      {user?.role !== 'BUYER' ? `Acheteur : ${order.buyer?.name}` : `Vendeur : ${order.seller?.name}`}
+                    </p>
+                    <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleDateString('fr-FR')}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_LABELS[order.status]?.color}`}>
+                      {STATUS_LABELS[order.status]?.label}
+                    </span>
+                    <p className="text-xl font-bold text-green-700 mt-1">{fmt(order.totalPrice)}</p>
+                  </div>
+                </div>
+
+                {/* Articles */}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {order.items?.map((item: any) => (
+                    <span key={item.id} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                      {item.product?.name} × {item.quantity}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Détail financier */}
+                <div className="mt-3 bg-gray-50 rounded-lg px-4 py-2 grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <p className="text-gray-400">Total transaction</p>
+                    <p className="font-semibold text-gray-800">{fmt(order.totalPrice)}</p>
+                  </div>
+                  <div>
+                    <p className="text-amber-600">Commission</p>
+                    <p className="font-semibold text-amber-700">{fmt(commission)}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400">
+                      {user?.role === 'SELLER' ? 'Vous recevez' : 'Vendeur reçoit'}
+                    </p>
+                    <p className="font-semibold text-green-700">{fmt(sellerAmount)}</p>
+                  </div>
+                </div>
+
+                {/* Escrow status */}
+                {order.escrow && (
+                  <div className="mt-2 text-xs text-gray-400 flex items-center gap-1">
+                    <span>Escrow :</span>
+                    <span className={`font-medium ${
+                      order.escrow.status === 'RELEASED' ? 'text-green-600' :
+                      order.escrow.status === 'REFUNDED' ? 'text-red-500' :
+                      'text-yellow-600'
+                    }`}>
+                      {order.escrow.status === 'HELD'     ? '🔒 Fonds bloqués' :
+                       order.escrow.status === 'RELEASED' ? '✅ Paiement libéré' :
+                       order.escrow.status === 'REFUNDED' ? '↩️ Remboursé' : order.escrow.status}
+                    </span>
+                  </div>
+                )}
+
+                {/* Actions */}
+                {(user?.role === 'SELLER' || user?.role === 'ADMIN') && order.status === 'PENDING' && (
+                  <div className="mt-3 flex gap-2">
+                    <button onClick={() => updateStatus(order.id, 'CONFIRMED')}
+                      className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200">
+                      Confirmer
+                    </button>
+                    <button onClick={() => updateStatus(order.id, 'CANCELLED')}
+                      className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm hover:bg-red-200">
+                      Annuler
+                    </button>
+                  </div>
+                )}
+                {(user?.role === 'SELLER' || user?.role === 'ADMIN') && order.status === 'CONFIRMED' && (
+                  <button onClick={() => updateStatus(order.id, 'SHIPPED')}
+                    className="mt-3 px-3 py-1 bg-purple-100 text-purple-700 rounded text-sm hover:bg-purple-200">
+                    Marquer expédiée
+                  </button>
+                )}
+                {user?.role === 'BUYER' && order.status === 'SHIPPED' && (
+                  <button onClick={() => updateStatus(order.id, 'DELIVERED')}
+                    className="mt-3 px-3 py-1 bg-green-100 text-green-700 rounded text-sm hover:bg-green-200">
+                    Confirmer réception
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          {orders.length === 0 && (
+            <div className="text-center py-16 text-gray-400">
+              <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p>Aucune commande</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

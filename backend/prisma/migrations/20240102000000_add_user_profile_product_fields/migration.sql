@@ -1,0 +1,30 @@
+-- AlterEnum
+ALTER TYPE "KycStatus" ADD VALUE IF NOT EXISTS 'PENDING';
+
+-- CreateEnum
+DO $$ BEGIN
+  CREATE TYPE "AccountType" AS ENUM ('INDIVIDUAL', 'COMPANY');
+EXCEPTION WHEN duplicate_object THEN null;
+END $$;
+
+-- AlterTable User
+ALTER TABLE "User"
+  ADD COLUMN IF NOT EXISTS "accountType"   "AccountType" NOT NULL DEFAULT 'INDIVIDUAL',
+  ADD COLUMN IF NOT EXISTS "phone"         TEXT,
+  ADD COLUMN IF NOT EXISTS "country"       TEXT,
+  ADD COLUMN IF NOT EXISTS "region"        TEXT,
+  ADD COLUMN IF NOT EXISTS "minOrderQty"   INTEGER NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS "isVerified"    BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS "verifyCode"    TEXT,
+  ADD COLUMN IF NOT EXISTS "verifyCodeExp" TIMESTAMP(3);
+
+-- AlterTable Product
+ALTER TABLE "Product"
+  ADD COLUMN IF NOT EXISTS "productionZone" TEXT,
+  ADD COLUMN IF NOT EXISTS "images"         TEXT[] DEFAULT ARRAY[]::TEXT[],
+  ADD COLUMN IF NOT EXISTS "transport"      TEXT[] DEFAULT ARRAY[]::TEXT[],
+  ADD COLUMN IF NOT EXISTS "minOrderQty"    INTEGER NOT NULL DEFAULT 1;
+
+-- AlterTable Kyc
+ALTER TABLE "Kyc"
+  ADD COLUMN IF NOT EXISTS "companyDocs" TEXT[] DEFAULT ARRAY[]::TEXT[];

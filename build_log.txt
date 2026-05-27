@@ -1,0 +1,12 @@
+﻿docker :  Image agromarket-enterprise-backend 
+Building 
+Au caractère Ligne:1 : 1
++ docker compose build --no-cache backend 2>&1 
+| Out-File -FilePath "c: ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (  
+   Image agromark...ckend Building :String) [  
+  ], RemoteException
+    + FullyQualifiedErrorId : NativeCommandErr 
+   or
+ 

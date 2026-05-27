@@ -1,0 +1,134 @@
+import axios from 'axios';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+
+const api = axios.create({ baseURL: API_URL });
+
+api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export default api;
+
+// Auth
+export const authApi = {
+  register: (data: any) => api.post('/auth/register', data),
+  verify: (email: string, code: string) => api.post('/auth/verify', { email, code }),
+  resendCode: (email: string) => api.post('/auth/resend-code', { email }),
+  login: (data: any) => api.post('/auth/login', data),
+  profile: () => api.get('/auth/profile'),
+};
+
+// Products
+export const productsApi = {
+  getAll: (category?: string) => api.get('/products', { params: category ? { category } : {} }),
+  getOne: (id: string) => api.get(`/products/${id}`),
+  create: (data: any) => api.post('/products', data),
+  update: (id: string, data: any) => api.put(`/products/${id}`, data),
+  delete: (id: string) => api.delete(`/products/${id}`),
+};
+
+// Stock
+export const stockApi = {
+  get: (productId: string) => api.get(`/stock/${productId}`),
+  update: (productId: string, quantity: number) => api.put(`/stock/${productId}`, { quantity }),
+  getLow: (threshold?: number) => api.get('/stock/low', { params: threshold ? { threshold } : {} }),
+};
+
+// Orders
+export const ordersApi = {
+  create: (data: any) => api.post('/orders', data),
+  getAll: () => api.get('/orders'),
+  getOne: (id: string) => api.get(`/orders/${id}`),
+  updateStatus: (id: string, status: string) => api.put(`/orders/${id}/status`, { status }),
+};
+
+// Product Listings
+export const productListingsApi = {
+  getAll: () => api.get('/product-listings'),
+  getForProduct: (productId: string) => api.get(`/product-listings/product/${productId}`),
+  getSellerListings: (sellerId: string) => api.get(`/product-listings/seller/${sellerId}`),
+  getFeatured: (limit?: number) => api.get('/product-listings/featured', { params: limit ? { limit } : {} }),
+  create: (data: any) => api.post('/product-listings', data),
+  update: (id: string, data: any) => api.put(`/product-listings/${id}`, data),
+  updateStock: (id: string, quantityChange: number) => api.put(`/product-listings/${id}/stock`, { quantityChange }),
+  delete: (id: string) => api.delete(`/product-listings/${id}`),
+};
+
+// Notifications
+export const notificationsApi = {
+  getAll: () => api.get('/notifications'),
+  getUnreadCount: () => api.get('/notifications/unread-count'),
+  markRead: (id: string) => api.put(`/notifications/${id}/read`),
+  markAllRead: () => api.put('/notifications/read-all'),
+};
+
+// KYC
+export const kycApi = {
+  submit: (documentType: string, documentUrl: string) =>
+    api.post('/kyc/submit', { documentType, documentUrl }),
+  getMe: () => api.get('/kyc/me'),
+  getAll: () => api.get('/kyc'),
+  review: (id: string, status: string) => api.put(`/kyc/${id}/review`, { status }),
+};
+
+// Admin
+export const adminApi = {
+  getDashboard: () => api.get('/admin/dashboard'),
+  getUsers: () => api.get('/admin/users'),
+  updateUserRole: (id: string, role: string) => api.put(`/admin/users/${id}/role`, { role }),
+  getCommissions: () => api.get('/admin/commissions'),
+};
+
+// Payments
+export const paymentsApi = {
+  initiate: (orderId: string, provider: string, phone: string) =>
+    api.post('/payments/initiate', { orderId, provider, phone }),
+  getStatus: (orderId: string) => api.get(`/payments/status/${orderId}`),
+  confirm: (orderId: string, status: string) => api.put(`/payments/${orderId}/confirm`, { status }),
+};
+
+// Invoices
+export const invoicesApi = {
+  download: (orderId: string) =>
+    api.get(`/invoices/${orderId}`, { responseType: 'blob' }),
+};
+
+// Advance Orders
+export const advanceOrdersApi = {
+  create: (data: any) => api.post('/advance-orders', data),
+  updateStatus: (id: string, status: string) => api.put(`/advance-orders/${id}/status`, { status }),
+  createBuyerRequest: (data: any) => api.post('/advance-orders/buyer-request', data),
+  createSellerOffer: (data: any) => api.post('/advance-orders/seller-offer', data),
+  getBuyerOrders: () => api.get('/advance-orders/buyer'),
+  getSellerOrders: () => api.get('/advance-orders/seller'),
+  getDetail: (id: string) => api.get(`/advance-orders/${id}`),
+  accept: (id: string) => api.put(`/advance-orders/${id}/accept`),
+  reject: (id: string, reason?: string) => api.put(`/advance-orders/${id}/reject`, { reason }),
+};
+
+// Messages
+export const messagesApi = {
+  createConversation: (participantId: string, title?: string, orderId?: string) =>
+    api.post('/messaging/conversations', { participantId, title, orderId }),
+  getConversations: () => api.get('/messaging/conversations'),
+  getConversationMessages: (conversationId: string) => api.get(`/messaging/conversations/${conversationId}/messages`),
+  sendMessage: (conversationId: string, content: string, receiverId?: string, attachments?: string[]) =>
+    api.post('/messaging/messages', { conversationId, receiverId, content, attachments }),
+  getUnreadCount: () => api.get('/messaging/unread-count'),
+};
+
+// Transport
+export const transportApi = {
+  getAllRates: (filters?: { origin?: string; destination?: string; productCategory?: string }) =>
+    api.get('/transport/rates', { params: filters }),
+  getRateById: (id: string) => api.get(`/transport/rates/${id}`),
+  getMyRates: () => api.get('/transport/my-rates'),
+  createRate: (data: any) => api.post('/transport/rates', data),
+  updateRate: (id: string, data: any) => api.put(`/transport/rates/${id}`, data),
+  deleteRate: (id: string) => api.delete(`/transport/rates/${id}`),
+};

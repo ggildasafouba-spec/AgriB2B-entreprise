@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: agromarket
+      POSTGRES_PASSWORD: agromarket
+      POSTGRES_DB: agromarket
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agromarket"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build: ./backend
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: postgresql://agromarket:agromarket@postgres:5432/agromarket
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-change_this_secret_in_env_file}
+      JWT_EXPIRES_IN: 7d
+      PORT: 4000
+      FRONTEND_URL: http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: /api
+        BACKEND_API_URL: http://backend:4000
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: /api
+      BACKEND_API_URL: http://backend:4000
+    depends_on:
+      - backend
+
+  # Service one-shot pour exécuter le seed (crée les comptes démo)
+  seed:
+    build: ./backend
+    command: sh -c "npx prisma generate && npm run seed"
+    environment:
+      DATABASE_URL: postgresql://agromarket:agromarket@postgres:5432/agromarket
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-change_this_secret_in_env_file}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:

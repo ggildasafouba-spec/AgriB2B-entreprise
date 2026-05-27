@@ -1,0 +1,232 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String        @id @default(uuid())
+  email           String        @unique
+  password        String
+  name            String
+  role            Role          @default(BUYER)
+  accountType     AccountType   @default(INDIVIDUAL)
+  phone           String?
+  country         String?
+  region          String?
+  minOrderQty     Int           @default(1)
+  isVerified      Boolean       @default(false)
+  verifyCode      String?
+  verifyCodeExp   DateTime?
+  kycStatus       KycStatus     @default(PENDING)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  products        Product[]
+  orders          Order[]       @relation("BuyerOrders")
+  soldOrders      Order[]       @relation("SellerOrders")
+  notifications   Notification[]
+  kyc             Kyc?
+  sentMessages    Message[]     @relation("SentMessages")
+  receivedMessages Message[]    @relation("ReceivedMessages")
+  transportRates  TransportRate[]
+}
+
+enum Role {
+  ADMIN
+  SELLER
+  BUYER
+  TRANSPORTER
+}
+
+enum AccountType {
+  INDIVIDUAL
+  COMPANY
+}
+
+enum KycStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model Product {
+  id              String      @id @default(uuid())
+  name            String
+  description     String
+  price           Float
+  unit            String      @default("kg")
+  minOrderQty     Int         @default(1)
+  category        String
+  productionZone  String?
+  images          String[]
+  transport       String[]
+  sellerId        String
+  seller          User        @relation(fields: [sellerId], references: [id])
+  stock           Stock?
+  orderItems      OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([sellerId])
+  @@index([category])
+}
+
+model Stock {
+  id        String   @id @default(uuid())
+  productId String   @unique
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Float
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id         String      @id @default(uuid())
+  buyerId    String
+  buyer      User        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  sellerId   String
+  seller     User        @relation("SellerOrders", fields: [sellerId], references: [id])
+  status     OrderStatus @default(PENDING)
+  totalPrice Float
+  items      OrderItem[]
+  escrow     Escrow?
+  payment    Payment?
+  messages   Message[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  DISPUTED
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Float
+  unitPrice Float
+}
+
+model Escrow {
+  id           String       @id @default(uuid())
+  orderId      String       @unique
+  order        Order        @relation(fields: [orderId], references: [id])
+  amount       Float
+  commission   Float        @default(0)
+  sellerAmount Float        @default(0)
+  status       EscrowStatus @default(HELD)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+enum EscrowStatus {
+  HELD
+  RELEASED
+  REFUNDED
+  DISPUTED
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([read])
+}
+
+model Kyc {
+  id           String    @id @default(uuid())
+  userId       String    @unique
+  user         User      @relation(fields: [userId], references: [id])
+  documentType String
+  documentUrl  String
+  companyDocs  String[]
+  status       KycStatus @default(PENDING)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  orderId       String        @unique
+  order         Order         @relation(fields: [orderId], references: [id])
+  provider      PaymentProvider
+  phone         String
+  amount        Float
+  transactionId String?
+  status        PaymentStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+enum PaymentProvider {
+  MTN_MOMO
+  ORANGE_MONEY
+  MANUAL
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  orderId    String?
+  order      Order?   @relation(fields: [orderId], references: [id])
+  content    String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([orderId])
+}
+
+model TransportRate {
+  id              String   @id @default(uuid())
+  transporterId   String
+  transporter     User     @relation(fields: [transporterId], references: [id])
+  origin          String
+  destination     String
+  productCategory String
+  pricePerKg      Float
+  pricePerUnit    Float?
+  minWeight       Float    @default(0)
+  maxWeight       Float?
+  currency        String   @default("FCFA")
+  vehicleType     String?
+  estimatedDays   Int?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([transporterId])
+  @@index([origin, destination])
+  @@index([productCategory])
+}
