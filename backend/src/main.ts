@@ -45,8 +45,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT || process.env.BACKEND_PORT || 4000;
-  await app.listen(port);
+  const port = process.env.PORT || 4000;
+  await app.listen(port, '0.0.0.0');
   console.log(`AgriB2B Backend running on port ${port}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   if (process.env.NODE_ENV !== 'production') {
