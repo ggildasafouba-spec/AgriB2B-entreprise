@@ -12,7 +12,7 @@ async function main() {
   for (const e of escrows) {
     const amount = e.amount;
     const accountType = e.order?.seller?.accountType;
-    const rate = accountType === 'COMPANY' ? 0.05 : 0.10;
+    const rate = accountType === 'COMPANY' ? 0.10 : 0.05;
     const commission = Math.round(amount * rate * 100) / 100;
     const sellerAmount = Math.round((amount - commission) * 100) / 100;
 

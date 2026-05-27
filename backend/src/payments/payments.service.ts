@@ -1,11 +1,15 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CommissionService } from '../common/commission.service';
 import { InitiatePaymentDto } from './dto/payment.dto';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private commissionService: CommissionService,
+  ) {}
 
   // ─── Initier un paiement MTN, Orange ou virement bancaire ────────────────
   async initiate(dto: InitiatePaymentDto, userId: string) {
@@ -93,7 +97,10 @@ export class PaymentsService {
   }
 
   async confirmPayment(orderId: string, dto: { status: 'SUCCESS' | 'FAILED' }, userId: string, role: string) {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId }, include: { payment: true } });
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { payment: true, seller: true },
+    });
     if (!order) throw new NotFoundException('Commande introuvable');
     if (role !== 'ADMIN' && order.sellerId !== userId) {
       throw new BadRequestException('Non autorisé');
@@ -110,6 +117,29 @@ export class PaymentsService {
 
     if (dto.status === 'SUCCESS' && order.status === 'PENDING') {
       await this.prisma.order.update({ where: { id: orderId }, data: { status: 'CONFIRMED' } });
+
+      // Calculate and store commission in Escrow
+      const commissionDetails = this.commissionService.getCommissionDetails(
+        order.totalPrice,
+        order.seller.accountType as any,
+        order.seller.role,
+      );
+
+      await this.prisma.escrow.upsert({
+        where: { orderId },
+        update: {
+          amount: order.totalPrice,
+          commission: commissionDetails.commission,
+          sellerAmount: commissionDetails.sellerAmount,
+        },
+        create: {
+          orderId,
+          amount: order.totalPrice,
+          commission: commissionDetails.commission,
+          sellerAmount: commissionDetails.sellerAmount,
+          status: 'HELD',
+        },
+      });
     }
 
     await this.prisma.notification.createMany({

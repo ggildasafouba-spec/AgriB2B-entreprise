@@ -2,8 +2,8 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto, UpdateOrderStatusDto } from './dto/order.dto';
 
-const COMPANY_COMMISSION = 0.05; // 5%
-const INDIVIDUAL_COMMISSION = 0.10; // 10%
+const COMPANY_COMMISSION = 0.10; // 10%
+const INDIVIDUAL_COMMISSION = 0.05; // 5%
 
 @Injectable()
 export class OrdersService {

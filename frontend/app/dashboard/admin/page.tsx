@@ -77,7 +77,7 @@ export default function AdminPage() {
       {/* Bandeau commission */}
       <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl p-5 mb-4 text-white flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium opacity-90">Revenus plateforme (commissions : 5% entreprises / 10% particuliers)</p>
+          <p className="text-sm font-medium opacity-90">Revenus plateforme (commissions : 5% particuliers / 10% entreprises)</p>
           <p className="text-3xl font-bold mt-1">{fmt(s?.totalCommission || 0)}</p>
           <p className="text-sm opacity-75 mt-1">
             Sur {fmt(s?.totalRevenue || 0)} de transactions livrées —

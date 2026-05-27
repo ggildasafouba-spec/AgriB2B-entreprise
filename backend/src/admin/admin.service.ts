@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
-const COMMISSION_RATE = 0.05;
+const COMMISSION_RATE = 0.05; // Taux moyen de fallback (5% particuliers, 10% entreprises)
 const TRANSPORT_COMMISSION_RATE = 0.03;
 
 @Injectable()

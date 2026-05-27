@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MessageFilterUtil } from '../common/message-filter.util';
 
 @Injectable()
 export class MessagesService {
@@ -29,6 +30,12 @@ export class MessagesService {
   async send(senderId: string, receiverId: string, content: string, orderId?: string) {
     if (!receiverId) throw new NotFoundException('Destinataire introuvable');
     if (senderId === receiverId) throw new ForbiddenException('Vous ne pouvez pas vous envoyer un message');
+
+    // Check for contact information
+    const filter = MessageFilterUtil.isContactInfoBlocked(content);
+    if (filter.blocked) {
+      throw new BadRequestException(filter.reason || 'Ce message contient des informations interdites.');
+    }
 
     const receiver = await this.prisma.user.findUnique({ where: { id: receiverId } });
     if (!receiver) throw new NotFoundException('Destinataire introuvable');
