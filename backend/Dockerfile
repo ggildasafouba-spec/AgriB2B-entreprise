@@ -19,4 +19,5 @@ RUN npm run build
 
 EXPOSE 4000
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+# Appliquer les migrations (tolère l'échec si DB pas prête) puis démarrer
+CMD ["sh", "-c", "npx prisma migrate deploy || echo 'Migration skipped' && node dist/main.js"]
