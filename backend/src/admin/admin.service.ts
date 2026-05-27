@@ -25,11 +25,32 @@ export class AdminService {
     const totalCommission = Math.round(totalRevenue * COMMISSION_RATE * 100) / 100;
     const totalSellers    = Math.round((totalRevenue - totalCommission) * 100) / 100;
 
-    // Commissions par escrow libéré
+    // Commissions par escrow (toutes les commandes, pas seulement les libérées)
+    const allEscrows = await this.prisma.escrow.aggregate({
+      _sum: { commission: true, sellerAmount: true, amount: true },
+    });
+
+    // Commissions par escrow libéré uniquement
     const releasedEscrows = await this.prisma.escrow.aggregate({
       _sum: { commission: true, sellerAmount: true, amount: true },
       where: { status: 'RELEASED' },
     });
+
+    // Commission transport cumulée (3% sur tous les tarifs actifs)
+    // On calcule la commission potentielle basée sur les tarifs existants
+    const transportRates = await this.prisma.transportRate.findMany({
+      where: { isActive: true },
+      select: { pricePerKg: true, pricePerUnit: true },
+    });
+    const transportCommissionTotal = Math.round(
+      transportRates.reduce((sum, rate) => {
+        return sum + (rate.pricePerKg * TRANSPORT_COMMISSION_RATE);
+      }, 0) * 100
+    ) / 100;
+
+    // Montant cumulé de TOUTES les commissions (commandes + transport)
+    const totalOrderCommissions = allEscrows._sum.commission || 0;
+    const totalAllCommissions = Math.round((totalOrderCommissions + transportCommissionTotal) * 100) / 100;
 
     const ordersByStatus = await this.prisma.order.groupBy({
       by: ['status'],
@@ -54,10 +75,17 @@ export class AdminService {
         orders,
         pendingKyc,
         totalRevenue,
-        totalCommission: releasedEscrows._sum.commission || totalCommission,
+        // Commissions commandes (toutes)
+        totalOrderCommissions,
+        // Commissions commandes libérées uniquement
+        totalReleasedCommissions: releasedEscrows._sum.commission || 0,
         totalSellerPayouts: releasedEscrows._sum.sellerAmount || totalSellers,
-        commissionRate: (releasedEscrows._sum.amount && releasedEscrows._sum.amount > 0)
-          ? Math.round((releasedEscrows._sum.commission / releasedEscrows._sum.amount) * 10000) / 100
+        // Commission transport estimée
+        totalTransportCommissions: transportCommissionTotal,
+        // TOTAL CUMULÉ de toutes les commissions
+        totalAllCommissions,
+        commissionRate: (allEscrows._sum.amount && allEscrows._sum.amount > 0)
+          ? Math.round((allEscrows._sum.commission / allEscrows._sum.amount) * 10000) / 100
           : COMMISSION_RATE * 100,
         transportRatesCount,
         transportCommissionRate: TRANSPORT_COMMISSION_RATE * 100,

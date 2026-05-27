@@ -93,6 +93,7 @@ model Order {
   items      OrderItem[]
   escrow     Escrow?
   payment    Payment?
+  delivery   Delivery?
   messages   Message[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
@@ -229,4 +230,73 @@ model TransportRate {
   @@index([transporterId])
   @@index([origin, destination])
   @@index([productCategory])
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Livraison et suivi en temps réel
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Delivery {
+  id              String          @id @default(uuid())
+  orderId         String          @unique
+  order           Order           @relation(fields: [orderId], references: [id])
+  transportRateId String?
+  transporterId   String?
+  // Informations de livraison
+  origin          String
+  destination     String
+  serviceType     DeliveryService @default(STANDARD)
+  weight          Float?
+  deliveryCost    Float
+  commission      Float           @default(0)
+  transporterAmount Float         @default(0)
+  // Adresse de livraison
+  deliveryAddress String
+  recipientName   String
+  recipientPhone  String
+  // Statut et suivi
+  status          DeliveryStatus  @default(PENDING)
+  estimatedDate   DateTime?
+  pickedUpAt      DateTime?
+  deliveredAt     DateTime?
+  // Tracking
+  trackingEvents  DeliveryTracking[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([orderId])
+  @@index([transporterId])
+  @@index([status])
+}
+
+model DeliveryTracking {
+  id          String   @id @default(uuid())
+  deliveryId  String
+  delivery    Delivery @relation(fields: [deliveryId], references: [id])
+  status      DeliveryStatus
+  location    String?
+  description String
+  createdAt   DateTime @default(now())
+
+  @@index([deliveryId])
+}
+
+enum DeliveryStatus {
+  PENDING
+  ACCEPTED
+  PICKED_UP
+  IN_TRANSIT
+  ARRIVED_CITY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+  RETURNED
+}
+
+enum DeliveryService {
+  EXPRESS
+  STANDARD
+  ECONOMIQUE
+  FRIGORIFIQUE
 }

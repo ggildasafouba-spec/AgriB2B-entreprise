@@ -1,9 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ordersApi, productsApi } from '../../../lib/api';
+import { ordersApi, productsApi, deliveryApi, transportApi } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
 import toast from 'react-hot-toast';
-import { ShoppingCart, Info } from 'lucide-react';
+import { ShoppingCart, Info, Truck, MapPin } from 'lucide-react';
+import Link from 'next/link';
 
 const COMPANY_COMMISSION = 0.10;
 const INDIVIDUAL_COMMISSION = 0.05;
@@ -269,6 +270,23 @@ export default function OrdersPage() {
                     className="mt-3 px-3 py-1 bg-green-100 text-green-700 rounded text-sm hover:bg-green-200">
                     Confirmer réception
                   </button>
+                )}
+
+                {/* Livraison */}
+                {order.delivery ? (
+                  <Link href={`/dashboard/orders/${order.id}/delivery`}
+                    className="mt-3 flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm hover:bg-blue-100 transition w-fit">
+                    <Truck className="w-4 h-4" />
+                    Suivi livraison — {order.delivery.status === 'DELIVERED' ? '✅ Livré' : order.delivery.status === 'IN_TRANSIT' ? '🚛 En transit' : '📋 ' + order.delivery.status}
+                  </Link>
+                ) : (
+                  user?.role === 'BUYER' && order.status !== 'CANCELLED' && (
+                    <Link href={`/dashboard/orders/${order.id}/delivery`}
+                      className="mt-3 flex items-center gap-2 px-3 py-2 bg-purple-50 text-purple-700 rounded-lg text-sm hover:bg-purple-100 transition w-fit">
+                      <Truck className="w-4 h-4" />
+                      Commander une livraison
+                    </Link>
+                  )
                 )}
               </div>
             );

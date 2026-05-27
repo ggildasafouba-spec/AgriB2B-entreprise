@@ -95,6 +95,7 @@ export class OrdersService {
         seller: { select: { name: true, email: true } },
         escrow: true,
         payment: true,
+        delivery: { include: { trackingEvents: { orderBy: { createdAt: 'desc' }, take: 1 } } },
       },
       orderBy: { createdAt: 'desc' },
     });

@@ -132,3 +132,23 @@ export const transportApi = {
   updateRate: (id: string, data: any) => api.put(`/transport/rates/${id}`, data),
   deleteRate: (id: string) => api.delete(`/transport/rates/${id}`),
 };
+
+// Delivery (Livraison)
+export const deliveryApi = {
+  getServiceOptions: () => api.get('/delivery/service-options'),
+  calculateCost: (data: { transportRateId: string; weight: number; serviceType: string }) =>
+    api.post('/delivery/calculate', data),
+  create: (data: {
+    orderId: string;
+    transportRateId: string;
+    weight: number;
+    serviceType: string;
+    deliveryAddress: string;
+    recipientName: string;
+    recipientPhone: string;
+  }) => api.post('/delivery/create', data),
+  getTracking: (orderId: string) => api.get(`/delivery/tracking/${orderId}`),
+  updateStatus: (deliveryId: string, data: { status: string; location?: string; description?: string }) =>
+    api.put(`/delivery/${deliveryId}/status`, data),
+  getMyDeliveries: () => api.get('/delivery/my-deliveries'),
+};

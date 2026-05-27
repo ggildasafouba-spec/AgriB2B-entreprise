@@ -70,34 +70,64 @@ export default function AdminPage() {
           <KpiCard icon={<ShoppingCart className="w-5 h-5"/>}label="Commandes"           value={s.orders}                         color="purple" />
           <KpiCard icon={<Clock className="w-5 h-5" />}     label="KYC en attente"      value={s.pendingKyc}                     color="yellow" />
           <KpiCard icon={<TrendingUp className="w-5 h-5" />} label="Volume livré"        value={fmt(s.totalRevenue)}              color="emerald" small />
-          <KpiCard icon={<Percent className="w-5 h-5" />}   label={`Commissions (${s.commissionRate}%)`} value={fmt(s.totalCommission)} color="orange" small />
+          <KpiCard icon={<Percent className="w-5 h-5" />}   label={`Commissions (${s.commissionRate}%)`} value={fmt(s.totalAllCommissions || s.totalOrderCommissions || 0)} color="orange" small />
         </div>
       )}
 
-      {/* Bandeau commission */}
-      <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl p-5 mb-4 text-white flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium opacity-90">Revenus plateforme (commissions : 5% particuliers / 10% entreprises)</p>
-          <p className="text-3xl font-bold mt-1">{fmt(s?.totalCommission || 0)}</p>
-          <p className="text-sm opacity-75 mt-1">
-            Sur {fmt(s?.totalRevenue || 0)} de transactions livrées —
-            Vendeurs ont reçu {fmt(s?.totalSellerPayouts || 0)}
-          </p>
+      {/* Montant cumulé total des commissions */}
+      {s && (
+        <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl p-6 mb-6 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium opacity-80">Montant cumulé de toutes les commissions</p>
+              <p className="text-4xl font-bold mt-2">{fmt(s.totalAllCommissions || 0)}</p>
+              <div className="flex gap-6 mt-3 text-sm opacity-90">
+                <div>
+                  <p className="opacity-70">Commandes ({s.commissionRate}%)</p>
+                  <p className="font-semibold">{fmt(s.totalOrderCommissions || 0)}</p>
+                </div>
+                <div>
+                  <p className="opacity-70">Transport (3%)</p>
+                  <p className="font-semibold">{fmt(s.totalTransportCommissions || 0)}</p>
+                </div>
+                <div>
+                  <p className="opacity-70">Dont libérées</p>
+                  <p className="font-semibold">{fmt(s.totalReleasedCommissions || 0)}</p>
+                </div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center">
+                <TrendingUp className="w-10 h-10 opacity-60" />
+              </div>
+            </div>
+          </div>
         </div>
-        <Percent className="w-16 h-16 opacity-20" />
-      </div>
+      )}
 
-      {/* Bandeau commission transport */}
-      <div className="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl p-5 mb-8 text-white flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium opacity-90">Commission transport : {s?.transportCommissionRate || 3}% sur chaque tarif</p>
-          <p className="text-lg font-bold mt-1">{s?.transportRatesCount || 0} tarifs actifs</p>
-          <p className="text-sm opacity-75 mt-1">
-            La commission de 3% est incluse dans les prix affichés aux utilisateurs.
-            Le transporteur reçoit le prix de base hors commission.
-          </p>
+      {/* Bandeau détail commissions */}
+      <div className="grid md:grid-cols-2 gap-4 mb-8">
+        <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl p-5 text-white flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium opacity-90">Commissions commandes (5% particuliers / 10% entreprises)</p>
+            <p className="text-2xl font-bold mt-1">{fmt(s?.totalOrderCommissions || 0)}</p>
+            <p className="text-sm opacity-75 mt-1">
+              Vendeurs ont reçu {fmt(s?.totalSellerPayouts || 0)}
+            </p>
+          </div>
+          <Percent className="w-12 h-12 opacity-20" />
         </div>
-        <TrendingUp className="w-16 h-16 opacity-20" />
+
+        <div className="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl p-5 text-white flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium opacity-90">Commissions transport (3%)</p>
+            <p className="text-2xl font-bold mt-1">{fmt(s?.totalTransportCommissions || 0)}</p>
+            <p className="text-sm opacity-75 mt-1">
+              {s?.transportRatesCount || 0} tarifs actifs
+            </p>
+          </div>
+          <TrendingUp className="w-12 h-12 opacity-20" />
+        </div>
       </div>
 
       {/* Tabs */}
