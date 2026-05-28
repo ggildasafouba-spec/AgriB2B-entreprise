@@ -1,6 +1,6 @@
 FROM node:20-slim
 
-RUN apt-get update -y && apt-get install -y openssl dos2unix && rm -rf /var/lib/apt/lists/*
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -14,9 +14,6 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npx tsc
 
-COPY start.sh ./
-RUN dos2unix start.sh && chmod +x start.sh
-
 EXPOSE 4000
 
-CMD ["./start.sh"]
+CMD ["node", "dist/main.js"]
