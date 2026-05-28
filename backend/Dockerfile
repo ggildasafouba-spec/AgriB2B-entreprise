@@ -14,6 +14,9 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npx tsc
 
+COPY start.sh ./
+RUN chmod +x start.sh
+
 EXPOSE 4000
 
-CMD npx prisma migrate deploy; node dist/main.js
+CMD ["./start.sh"]
