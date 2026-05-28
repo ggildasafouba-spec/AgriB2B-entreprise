@@ -17,5 +17,7 @@ RUN npx tsc
 EXPOSE 4000
 
 ENV NODE_ENV=production
+ENV PRISMA_HIDE_UPDATE_MESSAGE=1
+ENV CHECKPOINT_DISABLE=1
 
-CMD ["node", "dist/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
