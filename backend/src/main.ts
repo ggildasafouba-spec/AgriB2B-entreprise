@@ -1,11 +1,12 @@
 import 'reflect-metadata';
+console.log('[BOOT] main.ts loaded');
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  console.log('Starting AgriB2B Backend...');
+  console.log('[BOOT] bootstrap() called');
 
   const app = await NestFactory.create(AppModule);
 
