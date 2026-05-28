@@ -3,8 +3,21 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { execSync } from 'child_process';
 
 async function bootstrap() {
+  // Synchroniser le schéma de la base de données
+  try {
+    console.log('Syncing database schema...');
+    execSync('npx prisma db push --skip-generate --accept-data-loss', {
+      stdio: 'pipe',
+      timeout: 30000,
+    });
+    console.log('Database schema synced.');
+  } catch (e) {
+    console.log('Database sync skipped (may already be up to date)');
+  }
+
   const app = await NestFactory.create(AppModule);
 
   // CORS — accepter les requêtes du frontend (Vercel en prod, localhost en dev)
@@ -54,4 +67,7 @@ async function bootstrap() {
   }
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Failed to start application:', err);
+  process.exit(1);
+});

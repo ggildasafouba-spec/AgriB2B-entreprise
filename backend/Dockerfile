@@ -16,4 +16,6 @@ RUN npx tsc
 
 EXPOSE 4000
 
+ENV NODE_ENV=production
+
 CMD ["node", "dist/main.js"]
