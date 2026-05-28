@@ -30,8 +30,11 @@ export class AuthService {
   }
 
   // ─── Indique si on est en mode développement ────────────────────────────────
-  private get isDev(): boolean {
-    return process.env.NODE_ENV !== 'production';
+  // Retourne true si on doit exposer le code OTP dans la réponse
+  // (quand aucun vrai service SMS n'est configuré)
+  private get shouldExposeOtp(): boolean {
+    const smsProvider = process.env.SMS_PROVIDER || 'console';
+    return smsProvider === 'console';
   }
 
   // ─── Inscription ────────────────────────────────────────────────────────────
@@ -84,7 +87,7 @@ export class AuthService {
       message: 'Inscription réussie. Un code de vérification a été envoyé.',
       email: dto.email,
       // En développement, on expose le code OTP directement pour faciliter les tests
-      ...(this.isDev && { devOtpCode: code }),
+      ...(this.shouldExposeOtp && { devOtpCode: code }),
     };
   }
 
@@ -140,7 +143,7 @@ export class AuthService {
     await this.sendVerificationCode(user.phone || '', email, code, user.name);
     return {
       message: 'Nouveau code envoyé',
-      ...(this.isDev && { devOtpCode: code }),
+      ...(this.shouldExposeOtp && { devOtpCode: code }),
     };
   }
 
