@@ -54,6 +54,18 @@ export default function AdminPage() {
     }
   };
 
+  const deleteUser = async (id: string, name: string) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer le compte de ${name} ? Cette action est irréversible.`)) return;
+    try {
+      await adminApi.deleteUser(id);
+      toast.success(`Compte de ${name} supprimé`);
+      const res = await adminApi.getUsers();
+      setUsers(res.data);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur lors de la suppression');
+    }
+  };
+
   if (loading) return <p className="text-gray-500">Chargement...</p>;
 
   const s = dashboard?.stats;
@@ -276,13 +288,20 @@ export default function AdminPage() {
                     <td className="px-4 py-3 text-xs text-gray-500">
                       {[u.region, u.country].filter(Boolean).join(', ') || '—'}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 flex gap-2">
                       <select value={u.role} onChange={e => updateRole(u.id, e.target.value)}
                         className="border border-gray-300 rounded px-2 py-1 text-sm">
                         <option value="BUYER">BUYER</option>
                         <option value="SELLER">SELLER</option>
+                        <option value="TRANSPORTER">TRANSPORTER</option>
                         <option value="ADMIN">ADMIN</option>
                       </select>
+                      <button
+                        onClick={() => deleteUser(u.id, u.name)}
+                        className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200"
+                      >
+                        Supprimer
+                      </button>
                     </td>
                   </tr>
                 ))}

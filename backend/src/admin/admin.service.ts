@@ -113,6 +113,25 @@ export class AdminService {
     });
   }
 
+  async deleteUser(userId: string) {
+    // Vérifier que l'utilisateur existe
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error('Utilisateur introuvable');
+
+    // Supprimer toutes les données liées
+    await this.prisma.notification.deleteMany({ where: { userId } });
+    await this.prisma.message.deleteMany({ where: { OR: [{ senderId: userId }, { receiverId: userId }] } });
+    await this.prisma.kyc.deleteMany({ where: { userId } });
+    await this.prisma.transportRate.deleteMany({ where: { transporterId: userId } });
+    await this.prisma.deliveryTracking.deleteMany({ where: { delivery: { transporterId: userId } } });
+    await this.prisma.delivery.deleteMany({ where: { transporterId: userId } });
+
+    // Supprimer l'utilisateur
+    await this.prisma.user.delete({ where: { id: userId } });
+
+    return { message: `Utilisateur ${user.name} (${user.email}) supprimé avec succès` };
+  }
+
   async getCommissionReport() {
     const escrows = await this.prisma.escrow.findMany({
       include: {

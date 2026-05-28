@@ -21,6 +21,7 @@ export const authApi = {
   resendCode: (email: string) => api.post('/auth/resend-code', { email }),
   login: (data: any) => api.post('/auth/login', data),
   profile: () => api.get('/auth/profile'),
+  deleteAccount: () => api.delete('/auth/account'),
 };
 
 // Products
@@ -81,6 +82,7 @@ export const adminApi = {
   getDashboard: () => api.get('/admin/dashboard'),
   getUsers: () => api.get('/admin/users'),
   updateUserRole: (id: string, role: string) => api.put(`/admin/users/${id}/role`, { role }),
+  deleteUser: (id: string) => api.delete(`/admin/users/${id}`),
   getCommissions: () => api.get('/admin/commissions'),
 };
 

@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto, VerifyCodeDto } from './dto/auth.dto';
@@ -39,5 +39,13 @@ export class AuthController {
   @ApiOperation({ summary: 'Profil utilisateur connecté' })
   getProfile(@Request() req) {
     return this.authService.getProfile(req.user.id);
+  }
+
+  @Delete('account')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Supprimer mon propre compte' })
+  deleteMyAccount(@Request() req) {
+    return this.authService.deleteAccount(req.user.id);
   }
 }

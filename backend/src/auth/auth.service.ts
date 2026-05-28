@@ -201,4 +201,21 @@ export class AuthService {
       },
     });
   }
+
+  // ─── Supprimer son propre compte ────────────────────────────────────────────
+  async deleteAccount(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new BadRequestException('Utilisateur introuvable');
+
+    // Supprimer toutes les données liées
+    await this.prisma.notification.deleteMany({ where: { userId } });
+    await this.prisma.message.deleteMany({ where: { OR: [{ senderId: userId }, { receiverId: userId }] } });
+    await this.prisma.kyc.deleteMany({ where: { userId } });
+    await this.prisma.transportRate.deleteMany({ where: { transporterId: userId } });
+
+    // Supprimer l'utilisateur
+    await this.prisma.user.delete({ where: { id: userId } });
+
+    return { message: 'Votre compte a été supprimé avec succès.' };
+  }
 }
