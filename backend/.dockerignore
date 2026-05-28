@@ -2,9 +2,7 @@ node_modules
 dist
 .env
 npm-debug.log
-Dockerfile
 docker-compose.yml
 .git
 .gitignore
 *.log
-package-lock.json
