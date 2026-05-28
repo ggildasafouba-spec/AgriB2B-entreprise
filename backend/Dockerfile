@@ -20,4 +20,5 @@ ENV NODE_ENV=production
 ENV PRISMA_HIDE_UPDATE_MESSAGE=1
 ENV CHECKPOINT_DISABLE=1
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+ENTRYPOINT []
+CMD sh -c "npx prisma migrate deploy; exec node dist/main.js"
