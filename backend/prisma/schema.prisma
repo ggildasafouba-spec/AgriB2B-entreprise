@@ -94,7 +94,6 @@ model Order {
   escrow          Escrow?
   payment         Payment?
   delivery        Delivery?
-  installmentPlan InstallmentPlan?
   messages        Message[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -380,7 +379,6 @@ enum ReviewType {
 model InstallmentPlan {
   id            String        @id @default(uuid())
   orderId       String        @unique
-  order         Order         @relation(fields: [orderId], references: [id])
   totalAmount   Float
   installments  Int           @default(2)
   payments      InstallmentPayment[]

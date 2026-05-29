@@ -96,7 +96,6 @@ export class OrdersService {
         escrow: true,
         payment: true,
         delivery: { include: { trackingEvents: { orderBy: { createdAt: 'desc' }, take: 1 } } },
-        installmentPlan: { include: { payments: { orderBy: { dueDate: 'asc' } } } },
       },
       orderBy: { createdAt: 'desc' },
     });
