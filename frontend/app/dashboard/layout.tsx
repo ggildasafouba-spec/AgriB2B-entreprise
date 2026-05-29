@@ -16,6 +16,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [unreadMsg,  setUnreadMsg]  = useState(0);
   const [unreadNotif, setUnreadNotif] = useState(0);
   const [pendingPayments, setPendingPayments] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');
@@ -71,8 +72,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ...(user.role === 'TRANSPORTER' || user.role === 'ADMIN' ? [{ href: '/dashboard/transport', label: 'Transport', icon: <Truck className="w-5 h-5" /> }] : []),
     ...(user.role === 'ADMIN' ? [{ href: '/dashboard/admin', label: 'Admin', icon: <BarChart3 className="w-5 h-5" /> }] : []),
   ];
-
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex bg-gray-100">
