@@ -51,17 +51,28 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 py-16">
         <div className="text-center mb-16">
-          <div className="mx-auto max-w-4xl rounded-[2rem] border border-green-100 bg-white/90 py-12 px-8 shadow-xl shadow-green-100">
-            <div className="inline-flex items-center gap-4 mb-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-[1.5rem] bg-green-600 text-white text-3xl shadow-lg">🌾</div>
-              <div className="text-left">
-                <p className="text-sm uppercase tracking-[0.3em] text-green-600 font-semibold">AgriB2B</p>
-                <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight">La plateforme agricole B2B.</h1>
+          <div className="mx-auto max-w-5xl rounded-[2rem] border border-green-100 bg-white/90 overflow-hidden shadow-xl shadow-green-100">
+            {/* Image hero */}
+            <div className="relative h-64 md:h-80">
+              <img
+                src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1200&h=400&fit=crop"
+                alt="Agriculture africaine"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-white via-white/40 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12">
+                <div className="inline-flex items-center gap-4 mb-4">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-[1.5rem] bg-green-600 text-white text-3xl shadow-lg">🌾</div>
+                  <div className="text-left">
+                    <p className="text-sm uppercase tracking-[0.3em] text-green-600 font-semibold">AgriB2B</p>
+                    <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">La plateforme agricole B2B.</h1>
+                  </div>
+                </div>
+                <p className="text-lg text-gray-700 max-w-3xl">
+                  Connecter les producteurs, les acheteurs, les transporteurs et les solutions de paiement mobile en toute simplicité.
+                </p>
               </div>
             </div>
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              Connecter les producteurs, les acheteurs, les transporteurs et les solutions de paiement mobile en toute simplicité.
-            </p>
           </div>
         </div>
 
