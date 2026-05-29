@@ -19,6 +19,7 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [filterCategory, setFilterCategory] = useState('');
   const [form, setForm] = useState({
@@ -89,6 +90,50 @@ export default function ProductsPage() {
     }
   };
 
+  const handleEdit = (product: any) => {
+    setEditingProduct(product);
+    setForm({
+      name: product.name,
+      description: product.description,
+      price: String(product.price),
+      unit: product.unit,
+      category: product.category,
+      productionZone: product.productionZone || '',
+      initialStock: String(product.stock?.quantity || 0),
+      minOrderQty: String(product.minOrderQty || 1),
+      images: product.images || [],
+      transport: product.transport || [],
+      imageInput: '',
+    });
+    setShowForm(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+    if (form.transport.length === 0) return toast.error('Sélectionnez au moins un moyen de transport');
+    try {
+      await productsApi.update(editingProduct.id, {
+        name: form.name,
+        description: form.description,
+        price: parseFloat(form.price),
+        unit: form.unit,
+        category: form.category,
+        productionZone: form.productionZone,
+        images: form.images,
+        transport: form.transport,
+        minOrderQty: parseInt(form.minOrderQty),
+      });
+      toast.success('Produit modifié avec succès');
+      setShowForm(false);
+      setEditingProduct(null);
+      setForm({ name: '', description: '', price: '', unit: 'kg', category: '', productionZone: '', initialStock: '', minOrderQty: '1', images: [], transport: [], imageInput: '' });
+      load();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur');
+    }
+  };
+
   return (
     <div>
       {/* Header */}
@@ -105,7 +150,7 @@ export default function ProductsPage() {
           </select>
           {(user?.role === 'SELLER' || user?.role === 'ADMIN') && (
             <button
-              onClick={() => setShowForm(!showForm)}
+              onClick={() => { setShowForm(!showForm); setEditingProduct(null); setForm({ name: '', description: '', price: '', unit: 'kg', category: '', productionZone: '', initialStock: '', minOrderQty: '1', images: [], transport: [], imageInput: '' }); }}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
               <Plus className="w-4 h-4" /> Nouveau produit
@@ -116,8 +161,8 @@ export default function ProductsPage() {
 
       {/* Formulaire création */}
       {showForm && (
-        <form onSubmit={handleCreate} className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-green-100">
-          <h3 className="font-bold text-lg text-gray-900 mb-5">Nouveau produit</h3>
+        <form onSubmit={editingProduct ? handleUpdate : handleCreate} className="bg-white rounded-xl shadow-lg p-6 mb-8 border border-green-100">
+          <h3 className="font-bold text-lg text-gray-900 mb-5">{editingProduct ? 'Modifier le produit' : 'Nouveau produit'}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <FormField label="Nom du produit">
@@ -214,9 +259,9 @@ export default function ProductsPage() {
 
           <div className="flex gap-3 mt-5">
             <button type="submit" className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
-              Publier le produit
+              {editingProduct ? 'Enregistrer les modifications' : 'Publier le produit'}
             </button>
-            <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2 border rounded-lg hover:bg-gray-50">
+            <button type="button" onClick={() => { setShowForm(false); setEditingProduct(null); }} className="px-5 py-2 border rounded-lg hover:bg-gray-50">
               Annuler
             </button>
           </div>
@@ -236,6 +281,7 @@ export default function ProductsPage() {
               product={p}
               user={user}
               onDelete={handleDelete}
+              onEdit={handleEdit}
               onClick={() => setSelectedProduct(p)}
             />
           ))}
@@ -269,7 +315,7 @@ export default function ProductsPage() {
 }
 
 // ── Carte produit ─────────────────────────────────────────────────────────────
-function ProductCard({ product: p, user, onDelete, onClick }: any) {
+function ProductCard({ product: p, user, onDelete, onEdit, onClick }: any) {
   const [imgIdx, setImgIdx] = useState(0);
   const imgs = p.images?.length ? p.images : [];
 
@@ -317,6 +363,14 @@ function ProductCard({ product: p, user, onDelete, onClick }: any) {
             className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
           >
             <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+        {(user?.role === 'ADMIN' || user?.id === p.sellerId) && onEdit && (
+          <button
+            onClick={e => { e.stopPropagation(); onEdit(p); }}
+            className="absolute top-2 right-10 w-7 h-7 bg-blue-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs font-bold"
+          >
+            ✏️
           </button>
         )}
       </div>
