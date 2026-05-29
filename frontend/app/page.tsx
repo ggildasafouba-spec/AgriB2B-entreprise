@@ -65,31 +65,48 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6 mb-16">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
           <FeatureCard
-            icon={<ShoppingCart className="w-8 h-8 text-green-600" />}
+            icon="🛒"
+            color="from-green-500 to-emerald-600"
             title="Commandes B2B"
-            description="Passez et gérez vos commandes en toute simplicité"
+            description="Passez et gérez vos commandes entre producteurs et acheteurs. Négociez les prix, suivez chaque étape."
+            image="https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=200&fit=crop"
           />
           <FeatureCard
-            icon={<Package className="w-8 h-8 text-green-600" />}
-            title="Gestion Stock"
-            description="Suivi en temps réel de vos inventaires"
+            icon="📦"
+            color="from-blue-500 to-indigo-600"
+            title="Gestion de Stock"
+            description="Suivi en temps réel de vos inventaires. Alertes automatiques quand le stock est bas."
+            image="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400&h=200&fit=crop"
           />
           <FeatureCard
-            icon={<Truck className="w-8 h-8 text-green-600" />}
-            title="Transport"
-            description="Grilles tarifaires des transporteurs par destination"
+            icon="🚛"
+            color="from-orange-500 to-red-500"
+            title="Transport & Livraison"
+            description="Grilles tarifaires par destination. Suivi en temps réel. Express, Standard, Frigorifique."
+            image="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=400&h=200&fit=crop"
           />
           <FeatureCard
-            icon={<Shield className="w-8 h-8 text-green-600" />}
+            icon="🔒"
+            color="from-purple-500 to-violet-600"
             title="Paiement Escrow"
-            description="Transactions sécurisées avec garantie"
+            description="Votre argent est sécurisé jusqu'à la livraison. Paiement Mobile Money (MTN, Orange)."
+            image="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=200&fit=crop"
           />
           <FeatureCard
-            icon={<TrendingUp className="w-8 h-8 text-green-600" />}
-            title="Analytics"
-            description="Tableaux de bord et rapports détaillés"
+            icon="📊"
+            color="from-teal-500 to-cyan-600"
+            title="Analytics & Commissions"
+            description="Tableaux de bord détaillés. Suivi des commissions, revenus et performances."
+            image="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop"
+          />
+          <FeatureCard
+            icon="🌍"
+            color="from-yellow-500 to-amber-600"
+            title="Adapté à l'Afrique"
+            description="Unités locales (tas, seau, bassine). Calendrier des saisons. Négociation de prix."
+            image="https://images.unsplash.com/photo-1523741543316-beb7fc7023d8?w=400&h=200&fit=crop"
           />
         </div>
 
@@ -116,12 +133,27 @@ export default function Home() {
   );
 }
 
-function FeatureCard({ icon, title, description }: any) {
+function FeatureCard({ icon, color, title, description, image }: any) {
   return (
-    <div className="bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition">
-      <div className="mb-4">{icon}</div>
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-600">{description}</p>
+    <div className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+      {/* Image */}
+      <div className="relative h-40 overflow-hidden">
+        <img
+          src={image}
+          alt={title}
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+        />
+        <div className={`absolute inset-0 bg-gradient-to-t ${color} opacity-60`} />
+        <div className="absolute bottom-3 left-4">
+          <span className="text-3xl">{icon}</span>
+        </div>
+      </div>
+      {/* Content */}
+      <div className="p-5">
+        <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
+        <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
+      </div>
     </div>
   );
 }
