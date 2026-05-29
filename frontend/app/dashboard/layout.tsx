@@ -73,9 +73,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ...(user.role === 'ADMIN' ? [{ href: '/dashboard/admin', label: 'Admin', icon: <BarChart3 className="w-5 h-5" /> }] : []),
   ];
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="min-h-screen flex bg-gray-100">
-      <aside className="w-64 bg-white shadow-lg flex flex-col">
+      {/* Overlay mobile */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white shadow-lg flex flex-col transform transition-transform duration-200 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}>
         <div className="p-6 border-b">
           <div className="inline-flex items-center gap-3 mb-4">
             <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-green-600 text-white text-lg">🌾</span>
@@ -102,6 +112,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setSidebarOpen(false)}
                 className={`flex items-center justify-between px-3 py-2.5 rounded-xl transition ${
                   active
                     ? 'bg-green-600 text-white'
@@ -138,7 +149,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      <main className="flex-1 p-8 overflow-auto">{children}</main>
+      {/* Main content */}
+      <div className="flex-1 flex flex-col lg:ml-0">
+        {/* Mobile header */}
+        <header className="lg:hidden bg-white shadow-sm px-4 py-3 flex items-center justify-between sticky top-0 z-30">
+          <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-lg hover:bg-gray-100">
+            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <span className="font-bold text-green-700">🌾 AgriB2B</span>
+          <div className="w-8" />
+        </header>
+        <main className="flex-1 p-4 lg:p-8 overflow-auto">{children}</main>
+      </div>
     </div>
   );
 }
