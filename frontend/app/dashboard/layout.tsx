@@ -4,7 +4,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { messagesApi, notificationsApi, ordersApi } from '../../lib/api';
-import { LanguageSwitcher } from '../../lib/i18n';
 import {
   Home, Package, ShoppingCart, Bell, Shield,
   BarChart3, LogOut, Boxes, MessageSquare, CreditCard, Truck,
@@ -136,9 +135,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         <div className="p-3 border-t space-y-2">
-          <div className="flex justify-center">
-            <LanguageSwitcher />
-          </div>
           <button
             onClick={() => { logout(); router.push('/'); }}
             className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-red-600 hover:bg-red-50 transition text-sm font-medium"

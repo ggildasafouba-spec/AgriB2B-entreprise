@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '../lib/auth-context';
-import { I18nProvider } from '../lib/i18n';
 import { Toaster } from 'react-hot-toast';
 
 export const metadata: Metadata = {
@@ -34,9 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <AuthProvider>
-          <I18nProvider>
             {children}
-          </I18nProvider>
           <Toaster position="top-right" />
         </AuthProvider>
         <script
