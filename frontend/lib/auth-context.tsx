@@ -17,7 +17,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (data: any) => Promise<{ email: string; devOtpCode?: string }>;
+  register: (data: any) => Promise<{ email: string; devOtpCode?: string; verified?: boolean; token?: string; user?: any }>;
   verify: (email: string, code: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
@@ -99,9 +99,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.data.user);
   };
 
-  const register = async (data: any): Promise<{ email: string; devOtpCode?: string }> => {
+  const register = async (data: any): Promise<{ email: string; devOtpCode?: string; verified?: boolean; token?: string; user?: any }> => {
     const res = await authApi.register(data);
-    return { email: res.data.email, devOtpCode: res.data.devOtpCode };
+    // Si le compte est auto-vérifié (pas de SMS configuré), connecter directement
+    if (res.data.verified && res.data.token) {
+      persistSession(res.data.token, res.data.user);
+      setToken(res.data.token);
+      setUser(res.data.user);
+    }
+    return { email: res.data.email, devOtpCode: res.data.devOtpCode, verified: res.data.verified, token: res.data.token, user: res.data.user };
   };
 
   const verify = async (email: string, code: string) => {

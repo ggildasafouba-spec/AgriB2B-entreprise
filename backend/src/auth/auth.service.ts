@@ -67,9 +67,9 @@ export class AuthService {
         country: dto.country,
         region: dto.region,
         minOrderQty,
-        isVerified: false,
-        verifyCode: code,
-        verifyCodeExp: exp,
+        isVerified: this.shouldExposeOtp ? true : false,
+        verifyCode: this.shouldExposeOtp ? null : code,
+        verifyCodeExp: this.shouldExposeOtp ? null : exp,
         kyc: dto.accountType === 'COMPANY' ? {
           create: {
             documentType: dto.documentType,
@@ -81,12 +81,24 @@ export class AuthService {
       },
     });
 
+    // Si pas de vrai SMS configuré, on vérifie automatiquement et on retourne un token
+    if (this.shouldExposeOtp) {
+      const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+      const token = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role });
+      return {
+        message: 'Inscription réussie. Votre compte est actif.',
+        email: dto.email,
+        verified: true,
+        token,
+        user: { id: user.id, email: user.email, name: user.name, role: user.role, accountType: user.accountType },
+      };
+    }
+
     await this.sendVerificationCode(dto.phone, dto.email, code, dto.name);
 
     return {
       message: 'Inscription réussie. Un code de vérification a été envoyé.',
       email: dto.email,
-      // En développement, on expose le code OTP directement pour faciliter les tests
       ...(this.shouldExposeOtp && { devOtpCode: code }),
     };
   }

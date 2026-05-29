@@ -74,7 +74,13 @@ export default function RegisterPage() {
         documentUrl: form.accountType === 'COMPANY' ? form.documentUrl.trim() : undefined,
       });
       setPendingEmail(res.email);
-      // En mode dev, pré-remplir le code OTP si l'API le retourne
+      // Si le compte est auto-vérifié (pas de SMS configuré), rediriger directement
+      if (res.verified && res.token) {
+        toast.success('Compte créé avec succès ! Bienvenue sur AgriB2B 🌾');
+        router.push('/dashboard');
+        return;
+      }
+      // Sinon, afficher l'étape OTP
       if (res.devOtpCode) {
         const digits = res.devOtpCode.split('');
         setOtp(digits);
