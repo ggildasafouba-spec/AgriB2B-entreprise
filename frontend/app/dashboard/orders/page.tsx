@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ordersApi, productsApi, deliveryApi, transportApi } from '../../../lib/api';
+import { ordersApi, productsApi, deliveryApi, transportApi, installmentsApi } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
 import toast from 'react-hot-toast';
-import { ShoppingCart, Info, Truck, MapPin } from 'lucide-react';
+import { ShoppingCart, Info, Truck, MapPin, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 
 const COMPANY_COMMISSION = 0.10;
@@ -288,6 +288,14 @@ export default function OrdersPage() {
                     </Link>
                   )
                 )}
+
+                {/* Paiement échelonné */}
+                {user?.role === 'BUYER' && order.status !== 'CANCELLED' && !order.installmentPlan && (
+                  <InstallmentButton orderId={order.id} totalPrice={order.totalPrice} onCreated={load} />
+                )}
+                {order.installmentPlan && (
+                  <InstallmentStatus plan={order.installmentPlan} />
+                )}
               </div>
             );
           })}
@@ -299,6 +307,99 @@ export default function OrdersPage() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Composant bouton paiement échelonné ──────────────────────────────────────
+function InstallmentButton({ orderId, totalPrice, onCreated }: { orderId: string; totalPrice: number; onCreated: () => void }) {
+  const [showOptions, setShowOptions] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const createPlan = async (installments: number) => {
+    setLoading(true);
+    try {
+      await installmentsApi.create(orderId, installments);
+      toast.success(`Plan de paiement en ${installments} tranches créé !`);
+      setShowOptions(false);
+      onCreated();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!showOptions) {
+    return (
+      <button
+        onClick={() => setShowOptions(true)}
+        className="mt-3 flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-700 rounded-lg text-sm hover:bg-amber-100 transition w-fit"
+      >
+        <CreditCard className="w-4 h-4" />
+        Payer en plusieurs fois
+      </button>
+    );
+  }
+
+  return (
+    <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+      <p className="font-semibold text-amber-800 text-sm mb-3">💳 Choisir le mode de paiement échelonné</p>
+      <div className="space-y-2">
+        <button
+          onClick={() => createPlan(2)}
+          disabled={loading}
+          className="w-full text-left px-4 py-3 bg-white border border-amber-200 rounded-lg hover:border-amber-400 transition disabled:opacity-50"
+        >
+          <p className="font-medium text-gray-900 text-sm">Payer en 2 fois</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            1ère tranche : <span className="font-semibold">{fmt(Math.round(totalPrice * 0.6))}</span> (60% maintenant)
+            — 2ème tranche : <span className="font-semibold">{fmt(Math.round(totalPrice * 0.4))}</span> (40% à la livraison)
+          </p>
+        </button>
+        <button
+          onClick={() => createPlan(3)}
+          disabled={loading}
+          className="w-full text-left px-4 py-3 bg-white border border-amber-200 rounded-lg hover:border-amber-400 transition disabled:opacity-50"
+        >
+          <p className="font-medium text-gray-900 text-sm">Payer en 3 fois</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            1ère : <span className="font-semibold">{fmt(Math.round(totalPrice * 0.5))}</span> (50%) 
+            — 2ème : <span className="font-semibold">{fmt(Math.round(totalPrice * 0.25))}</span> (25% à l'expédition)
+            — 3ème : <span className="font-semibold">{fmt(Math.round(totalPrice * 0.25))}</span> (25% à la livraison)
+          </p>
+        </button>
+      </div>
+      <button onClick={() => setShowOptions(false)} className="mt-2 text-xs text-gray-500 hover:text-gray-700">
+        Annuler
+      </button>
+    </div>
+  );
+}
+
+// ── Composant statut paiement échelonné ──────────────────────────────────────
+function InstallmentStatus({ plan }: { plan: any }) {
+  return (
+    <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+      <p className="font-semibold text-amber-800 text-sm mb-2">
+        💳 Paiement en {plan.installments} tranches
+        {plan.status === 'COMPLETED' && <span className="ml-2 text-green-600">✅ Terminé</span>}
+      </p>
+      <div className="space-y-1.5">
+        {plan.payments?.map((p: any, i: number) => (
+          <div key={p.id || i} className="flex justify-between items-center text-sm">
+            <span className="text-gray-600">{p.label}</span>
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{fmt(p.amount)}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                p.status === 'SUCCESS' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+              }`}>
+                {p.status === 'SUCCESS' ? '✅ Payé' : '⏳ En attente'}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

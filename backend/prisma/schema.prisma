@@ -83,20 +83,21 @@ model Stock {
 }
 
 model Order {
-  id         String      @id @default(uuid())
-  buyerId    String
-  buyer      User        @relation("BuyerOrders", fields: [buyerId], references: [id])
-  sellerId   String
-  seller     User        @relation("SellerOrders", fields: [sellerId], references: [id])
-  status     OrderStatus @default(PENDING)
-  totalPrice Float
-  items      OrderItem[]
-  escrow     Escrow?
-  payment    Payment?
-  delivery   Delivery?
-  messages   Message[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id              String      @id @default(uuid())
+  buyerId         String
+  buyer           User        @relation("BuyerOrders", fields: [buyerId], references: [id])
+  sellerId        String
+  seller          User        @relation("SellerOrders", fields: [sellerId], references: [id])
+  status          OrderStatus @default(PENDING)
+  totalPrice      Float
+  items           OrderItem[]
+  escrow          Escrow?
+  payment         Payment?
+  delivery        Delivery?
+  installmentPlan InstallmentPlan?
+  messages        Message[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   @@index([buyerId])
   @@index([sellerId])
@@ -379,6 +380,7 @@ enum ReviewType {
 model InstallmentPlan {
   id            String        @id @default(uuid())
   orderId       String        @unique
+  order         Order         @relation(fields: [orderId], references: [id])
   totalAmount   Float
   installments  Int           @default(2)
   payments      InstallmentPayment[]
