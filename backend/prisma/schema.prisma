@@ -300,3 +300,73 @@ enum DeliveryService {
   ECONOMIQUE
   FRIGORIFIQUE
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Négociation de prix
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Negotiation {
+  id             String             @id @default(uuid())
+  productId      String
+  buyerId        String
+  sellerId       String
+  originalPrice  Float
+  proposedPrice  Float
+  counterPrice   Float?
+  finalPrice     Float?
+  quantity       Float
+  status         NegotiationStatus  @default(PENDING)
+  messages       NegotiationMessage[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([productId])
+}
+
+model NegotiationMessage {
+  id             String       @id @default(uuid())
+  negotiationId  String
+  negotiation    Negotiation  @relation(fields: [negotiationId], references: [id])
+  senderId       String
+  content        String
+  proposedPrice  Float?
+  createdAt      DateTime     @default(now())
+
+  @@index([negotiationId])
+}
+
+enum NegotiationStatus {
+  PENDING
+  COUNTER
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Notes et avis
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model Review {
+  id          String   @id @default(uuid())
+  orderId     String
+  reviewerId  String
+  targetId    String
+  rating      Int
+  comment     String?
+  type        ReviewType
+  createdAt   DateTime @default(now())
+
+  @@unique([orderId, reviewerId, type])
+  @@index([targetId])
+  @@index([reviewerId])
+}
+
+enum ReviewType {
+  SELLER
+  BUYER
+  TRANSPORTER
+}

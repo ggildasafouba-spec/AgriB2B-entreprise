@@ -135,6 +135,30 @@ export const transportApi = {
   deleteRate: (id: string) => api.delete(`/transport/rates/${id}`),
 };
 
+// Negotiations (Négociation de prix)
+export const negotiationsApi = {
+  create: (data: { productId: string; proposedPrice: number; quantity: number; message?: string }) =>
+    api.post('/negotiations', data),
+  getAll: () => api.get('/negotiations'),
+  getOne: (id: string) => api.get(`/negotiations/${id}`),
+  respond: (id: string, data: { action: string; counterPrice?: number; message?: string }) =>
+    api.put(`/negotiations/${id}/respond`, data),
+};
+
+// Reviews (Notes et avis)
+export const reviewsApi = {
+  create: (data: { orderId: string; targetId: string; rating: number; comment?: string; type: string }) =>
+    api.post('/reviews', data),
+  getUserReviews: (userId: string) => api.get(`/reviews/user/${userId}`),
+  getOrderReviews: (orderId: string) => api.get(`/reviews/order/${orderId}`),
+};
+
+// Seasons (Calendrier agricole)
+export const seasonsApi = {
+  get: (month?: number, region?: string) =>
+    api.get('/products/seasons', { params: { month, region } }),
+};
+
 // Delivery (Livraison)
 export const deliveryApi = {
   getServiceOptions: () => api.get('/delivery/service-options'),

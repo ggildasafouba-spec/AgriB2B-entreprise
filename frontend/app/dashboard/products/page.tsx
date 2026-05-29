@@ -184,7 +184,7 @@ export default function ProductsPage() {
 
             <FormField label="Unité">
               <select value={form.unit} onChange={e => set('unit', e.target.value)} className="input">
-                {['kg', 'tonne', 'sac', 'litre', 'pièce', 'caisse', 'carton'].map(u => <option key={u}>{u}</option>)}
+                {['kg', 'tonne', 'sac', 'litre', 'pièce', 'caisse', 'carton', 'tas', 'seau', 'bassine', 'régime', 'filet', 'panier', 'botte', 'cuvette', 'mesure'].map(u => <option key={u}>{u}</option>)}
               </select>
             </FormField>
 

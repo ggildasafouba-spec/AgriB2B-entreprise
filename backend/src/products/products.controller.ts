@@ -5,11 +5,24 @@ import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { getSeasonalProducts, CAMEROON_SEASONS, MONTH_NAMES_FR } from './seasons';
 
 @ApiTags('Products')
 @Controller('products')
 export class ProductsController {
   constructor(private productsService: ProductsService) {}
+
+  @Get('seasons')
+  @ApiOperation({ summary: 'Calendrier des saisons agricoles du Cameroun' })
+  getSeasons(@Query('month') month?: string, @Query('region') region?: string) {
+    const m = month ? parseInt(month) : undefined;
+    return {
+      currentMonth: MONTH_NAMES_FR[(m || new Date().getMonth() + 1) - 1],
+      inSeason: getSeasonalProducts(m, region),
+      allSeasons: CAMEROON_SEASONS,
+      months: MONTH_NAMES_FR,
+    };
+  }
 
   @Get()
   @ApiOperation({ summary: 'Liste tous les produits' })
