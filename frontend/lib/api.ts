@@ -159,6 +159,14 @@ export const seasonsApi = {
     api.get('/products/seasons', { params: { month, region } }),
 };
 
+// Installments (Paiement échelonné)
+export const installmentsApi = {
+  create: (orderId: string, installments: number) =>
+    api.post('/installments', { orderId, installments }),
+  getPlan: (orderId: string) => api.get(`/installments/${orderId}`),
+  markPaid: (paymentId: string) => api.put(`/installments/${paymentId}/pay`),
+};
+
 // Delivery (Livraison)
 export const deliveryApi = {
   getServiceOptions: () => api.get('/delivery/service-options'),

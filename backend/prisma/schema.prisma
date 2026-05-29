@@ -370,3 +370,41 @@ enum ReviewType {
   BUYER
   TRANSPORTER
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Paiement échelonné
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model InstallmentPlan {
+  id            String        @id @default(uuid())
+  orderId       String        @unique
+  totalAmount   Float
+  installments  Int           @default(2)
+  payments      InstallmentPayment[]
+  status        InstallmentPlanStatus @default(ACTIVE)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([orderId])
+}
+
+model InstallmentPayment {
+  id              String    @id @default(uuid())
+  planId          String
+  plan            InstallmentPlan @relation(fields: [planId], references: [id])
+  amount          Float
+  dueDate         DateTime
+  paidAt          DateTime?
+  status          PaymentStatus @default(PENDING)
+  label           String
+  createdAt       DateTime  @default(now())
+
+  @@index([planId])
+}
+
+enum InstallmentPlanStatus {
+  ACTIVE
+  COMPLETED
+  DEFAULTED
+}
