@@ -289,13 +289,7 @@ export default function OrdersPage() {
                   )
                 )}
 
-                {/* Paiement échelonné */}
-                {user?.role === 'BUYER' && order.status !== 'CANCELLED' && !order.installmentPlan && (
-                  <InstallmentButton orderId={order.id} totalPrice={order.totalPrice} onCreated={load} />
-                )}
-                {order.installmentPlan && (
-                  <InstallmentStatus plan={order.installmentPlan} />
-                )}
+                {/* Paiement échelonné - sera activé quand les migrations seront appliquées */}
               </div>
             );
           })}
