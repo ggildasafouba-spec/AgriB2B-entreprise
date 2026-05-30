@@ -33,6 +33,7 @@ export default function RegisterPage() {
     minOrderQty: 10,
     documentType: '',
     documentUrl: '',
+    acceptCgu: false,
   });
 
   const set = (key: string, val: any) => setForm(prev => ({ ...prev, [key]: val }));
@@ -320,7 +321,26 @@ export default function RegisterPage() {
                 </Field>
               </div>
 
-              <button type="submit" disabled={loading}
+              {/* CGU */}
+              <div className="flex items-start gap-3 mt-4 bg-gray-50 rounded-lg p-3">
+                <input
+                  type="checkbox"
+                  id="cgu"
+                  checked={form.acceptCgu || false}
+                  onChange={e => set('acceptCgu', e.target.checked)}
+                  className="mt-1 w-4 h-4 text-green-600 rounded border-gray-300 focus:ring-green-500"
+                  required
+                />
+                <label htmlFor="cgu" className="text-xs text-gray-600 leading-relaxed">
+                  J'ai lu et j'accepte les{' '}
+                  <a href="/cgu" target="_blank" className="text-green-600 hover:underline font-medium">
+                    Conditions Générales d'Utilisation
+                  </a>
+                  , notamment le fait que la gestion des stocks est déclarative et que la plateforme n'est pas responsable de la disponibilité réelle des produits.
+                </label>
+              </div>
+
+              <button type="submit" disabled={loading || !form.acceptCgu}
                 className="w-full bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 disabled:opacity-50 mt-2">
                 {loading ? 'Création du compte...' : 'Créer mon compte →'}
               </button>
