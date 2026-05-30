@@ -11,7 +11,7 @@ function BrandLogo() {
       </div>
       <div>
         <div className="text-lg font-bold text-green-700">AgriB2B</div>
-        <div className="text-sm text-gray-500">La plateforme agricole B2B.</div>
+        <div className="text-xs text-gray-500 font-semibold italic">La terre produit, AgriB2B distribue</div>
       </div>
     </div>
   );
@@ -60,7 +60,7 @@ export default function Home() {
                   <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight">La plateforme agricole B2B.</h1>
                 </div>
               </div>
-              <p className="text-xl text-green-100 font-medium italic mt-2">
+              <p className="text-xl text-green-100 font-bold italic mt-2">
                 &laquo; La terre produit, AgriB2B distribue &raquo;
               </p>
               <p className="text-lg text-green-200 max-w-3xl mt-3">
