@@ -55,7 +55,7 @@ export default function Home() {
             {/* Image hero */}
             <div className="relative h-64 md:h-80">
               <img
-                src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1200&h=400&fit=crop"
+                src="https://images.unsplash.com/photo-1592982537447-6f2a6a0c7c18?w=1200&h=400&fit=crop"
                 alt="Agriculture africaine"
                 className="w-full h-full object-cover"
               />
@@ -82,42 +82,42 @@ export default function Home() {
             color="from-green-500 to-emerald-600"
             title="Commandes B2B"
             description="Passez et gérez vos commandes entre producteurs et acheteurs. Négociez les prix, suivez chaque étape."
-            image="https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=200&fit=crop"
+            image="https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=400&h=200&fit=crop"
           />
           <FeatureCard
             icon="📰"
             color="from-blue-500 to-indigo-600"
             title="Journal Agricole"
             description="Actualités du marché, prix des produits par région, conseils de saison et tendances agricoles au Cameroun."
-            image="https://images.unsplash.com/photo-1495107334309-fcf20504a5ab?w=400&h=200&fit=crop"
+            image="https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=400&h=200&fit=crop"
           />
           <FeatureCard
             icon="🚛"
             color="from-orange-500 to-red-500"
             title="Transport & Livraison"
             description="Grilles tarifaires par destination. Suivi en temps réel. Express, Standard, Frigorifique."
-            image="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=400&h=200&fit=crop"
+            image="https://images.unsplash.com/photo-1591768793355-74d04bb6e2f0?w=400&h=200&fit=crop"
           />
           <FeatureCard
             icon="🔒"
             color="from-purple-500 to-violet-600"
             title="Paiement Escrow"
             description="Votre argent est sécurisé jusqu'à la livraison. Paiement Mobile Money (MTN, Orange)."
-            image="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=200&fit=crop"
+            image="https://images.unsplash.com/photo-1604594849809-dfedbc827105?w=400&h=200&fit=crop"
           />
           <FeatureCard
             icon="📊"
             color="from-teal-500 to-cyan-600"
             title="Analytics & Commissions"
             description="Tableaux de bord détaillés. Suivi des commissions, revenus et performances."
-            image="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop"
+            image="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=200&fit=crop"
           />
           <FeatureCard
             icon="🌍"
             color="from-yellow-500 to-amber-600"
             title="Adapté à l'Afrique"
-            description="Unités locales (tas, seau, bassine). Calendrier des saisons. Négociation de prix."
-            image="https://images.unsplash.com/photo-1523741543316-beb7fc7023d8?w=400&h=200&fit=crop"
+            description="Calendrier des saisons camerounaises. Négociation de prix. Paiement Mobile Money."
+            image="https://images.unsplash.com/photo-1580748142473-f6cf861a8cfe?w=400&h=200&fit=crop"
           />
         </div>
 
