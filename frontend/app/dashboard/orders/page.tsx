@@ -315,22 +315,24 @@ export default function OrdersPage() {
                   )}
                 </div>
 
-                {/* Livraison */}
-                {order.delivery ? (
-                  <Link href={`/dashboard/orders/${order.id}/delivery`}
-                    className="mt-3 flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm hover:bg-blue-100 transition w-fit">
-                    <Truck className="w-4 h-4" />
-                    Suivi livraison — {order.delivery.status === 'DELIVERED' ? '✅ Livré' : order.delivery.status === 'IN_TRANSIT' ? '🚛 En transit' : '📋 ' + order.delivery.status}
-                  </Link>
-                ) : (
-                  user?.role === 'BUYER' && order.status !== 'CANCELLED' && (
+                {/* Livraison — masquer quand la commande est livrée */}
+                {order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && (
+                  order.delivery ? (
                     <Link href={`/dashboard/orders/${order.id}/delivery`}
-                      className="mt-3 flex items-center gap-2 px-3 py-2 bg-purple-50 text-purple-700 rounded-lg text-sm hover:bg-purple-100 transition w-fit">
+                      className="mt-3 flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm hover:bg-blue-100 transition w-fit">
                       <Truck className="w-4 h-4" />
-                      Commander une livraison
+                      Suivi livraison — {order.delivery.status === 'IN_TRANSIT' ? '🚛 En transit' : '📋 ' + order.delivery.status}
                     </Link>
+                  ) : (
+                    order.buyerId === user?.id && (
+                      <Link href={`/dashboard/orders/${order.id}/delivery`}
+                        className="mt-3 flex items-center gap-2 px-3 py-2 bg-purple-50 text-purple-700 rounded-lg text-sm hover:bg-purple-100 transition w-fit">
+                        <Truck className="w-4 h-4" />
+                        Commander une livraison
+                      </Link>
+                    )
                   )
-                )}
+                )}}
 
                 {/* Paiement échelonné (entreprises uniquement) */}
                 {user?.role === 'BUYER' && user?.accountType === 'COMPANY' && order.status !== 'CANCELLED' && (
