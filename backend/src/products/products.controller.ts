@@ -38,10 +38,9 @@ export class ProductsController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SELLER', 'ADMIN')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Créer un produit (vendeur)' })
+  @ApiOperation({ summary: 'Créer un produit' })
   create(@Body() dto: CreateProductDto, @Request() req) {
     return this.productsService.create(dto, req.user.id);
   }

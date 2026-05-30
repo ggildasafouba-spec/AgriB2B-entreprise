@@ -27,7 +27,7 @@ export class TransportController {
   }
 
   @Get('my-rates')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   @Roles('TRANSPORTER')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Mes tarifs (transporteur connecté)' })
@@ -36,7 +36,7 @@ export class TransportController {
   }
 
   @Post('rates')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   @Roles('TRANSPORTER')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Créer un tarif de transport' })
@@ -55,7 +55,7 @@ export class TransportController {
   }
 
   @Put('rates/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   @Roles('TRANSPORTER')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Modifier un tarif' })
@@ -64,7 +64,7 @@ export class TransportController {
   }
 
   @Delete('rates/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   @Roles('TRANSPORTER')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Supprimer un tarif' })

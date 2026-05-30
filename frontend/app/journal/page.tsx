@@ -21,6 +21,7 @@ const ARTICLES = [
     lien: 'https://www.businessincameroon.com/agriculture/2605-16219-cameroon-farmgate-cocoa-prices-drop-cfa250-in-less-than-two-weeks',
     categorie: 'Cacao',
     image: 'https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=400&h=200&fit=crop',
+    vues: 342,
   },
   {
     id: 2,
@@ -31,6 +32,7 @@ const ARTICLES = [
     lien: 'https://www.businessincameroon.com/public-management/2605-16222-cameroon-upgrades-cocoa-and-coffee-labs-to-strengthen-export-competitiveness',
     categorie: 'Exportation',
     image: 'https://images.unsplash.com/photo-1611070960720-61fe2fdc5f97?w=400&h=200&fit=crop',
+    vues: 218,
   },
   {
     id: 3,
@@ -41,6 +43,7 @@ const ARTICLES = [
     lien: 'https://english.news.cn/20260429/1eaddc03bd6943e0894296d214e45873/c.html',
     categorie: 'Commerce international',
     image: 'https://images.unsplash.com/photo-1526470608268-f674ce90ebd4?w=400&h=200&fit=crop',
+    vues: 567,
   },
   {
     id: 4,
@@ -51,6 +54,7 @@ const ARTICLES = [
     lien: 'http://www.ecofinagency.com/news-agriculture/0905-55418-cameroon-cocoa-prices-recover-to-nearly-3/kg-as-season-nears-end',
     categorie: 'Cacao',
     image: 'https://images.unsplash.com/photo-1599599810694-b5b37304c041?w=400&h=200&fit=crop',
+    vues: 423,
   },
   {
     id: 5,
@@ -61,6 +65,7 @@ const ARTICLES = [
     lien: 'https://www.newsminimalist.com/articles/cameroons-cocoa-prices-drop-below-expectations-for-the-202526-season-d4ae5ca6',
     categorie: 'Bilan',
     image: 'https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=400&h=200&fit=crop',
+    vues: 189,
   },
 ];
 
@@ -139,7 +144,10 @@ export default function JournalPage() {
                 <p className="text-xs text-gray-500 leading-relaxed mb-3">{article.resume}</p>
                 <div className="flex justify-between items-center text-xs text-gray-400">
                   <span>{article.date}</span>
-                  <span className="flex items-center gap-1">{article.source} <ExternalLink className="w-3 h-3" /></span>
+                  <div className="flex items-center gap-3">
+                    <span>👁 {article.vues} vues</span>
+                    <span className="flex items-center gap-1">{article.source} <ExternalLink className="w-3 h-3" /></span>
+                  </div>
                 </div>
               </div>
             </a>
