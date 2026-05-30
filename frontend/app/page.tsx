@@ -85,11 +85,11 @@ export default function Home() {
             image="https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=200&fit=crop"
           />
           <FeatureCard
-            icon="📦"
+            icon="📰"
             color="from-blue-500 to-indigo-600"
-            title="Gestion de Stock"
-            description="Suivi en temps réel de vos inventaires. Alertes automatiques quand le stock est bas."
-            image="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400&h=200&fit=crop"
+            title="Journal Agricole"
+            description="Actualités du marché, prix des produits par région, conseils de saison et tendances agricoles au Cameroun."
+            image="https://images.unsplash.com/photo-1495107334309-fcf20504a5ab?w=400&h=200&fit=crop"
           />
           <FeatureCard
             icon="🚛"
