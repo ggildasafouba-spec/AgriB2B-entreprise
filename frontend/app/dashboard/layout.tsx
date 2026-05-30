@@ -63,7 +63,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: '/dashboard',               label: 'Accueil',       icon: <Home className="w-5 h-5" /> },
     { href: '/dashboard/products',      label: 'Produits',      icon: <Package className="w-5 h-5" /> },
     { href: '/dashboard/product-listings', label: 'Annonces',    icon: <Boxes className="w-5 h-5" /> },
-    { href: '/dashboard/advance-orders', label: 'Pré-commandes', icon: <ShoppingCart className="w-5 h-5" /> },
     { href: '/dashboard/orders',        label: 'Commandes',     icon: <ShoppingCart className="w-5 h-5" /> },
     { href: '/dashboard/payments',      label: 'Paiements',     icon: <CreditCard className="w-5 h-5" />, badge: pendingPayments },
     { href: '/dashboard/stock',         label: 'Stock',         icon: <Boxes className="w-5 h-5" /> },

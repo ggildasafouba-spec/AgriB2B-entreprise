@@ -36,7 +36,6 @@ export default function DashboardPage() {
       <div className="grid md:grid-cols-2 gap-6">
         <QuickAction href="/dashboard/products" title="Parcourir les produits" desc="Découvrez les produits agricoles disponibles" />
         <QuickAction href="/dashboard/product-listings" title="Annonces des producteurs" desc="Voir les producteurs et les stocks par producteur" />
-        <QuickAction href="/dashboard/advance-orders" title="Commandes anticipées" desc="Gérer vos pré-commandes et offres futures" />
         {user?.role === 'SELLER' && (
           <QuickAction href="/dashboard/products" title="Gérer mes produits" desc="Ajoutez ou modifiez vos produits" />
         )}
