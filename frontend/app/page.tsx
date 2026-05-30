@@ -96,7 +96,7 @@ export default function Home() {
             color="from-orange-500 to-red-500"
             title="Transport & Livraison"
             description="Grilles tarifaires par destination. Suivi en temps réel. Express, Standard, Frigorifique."
-            image="https://images.unsplash.com/photo-1591768793355-74d04bb6e2f0?w=400&h=200&fit=crop"
+            image="https://images.unsplash.com/photo-1519003722824-194d4455a60c?w=400&h=200&fit=crop"
           />
           <FeatureCard
             icon="🔒"
@@ -117,7 +117,7 @@ export default function Home() {
             color="from-yellow-500 to-amber-600"
             title="Adapté à l'Afrique"
             description="Calendrier des saisons camerounaises. Négociation de prix. Paiement Mobile Money."
-            image="https://images.unsplash.com/photo-1580748142473-f6cf861a8cfe?w=400&h=200&fit=crop"
+            image="https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=400&h=200&fit=crop"
           />
         </div>
 
