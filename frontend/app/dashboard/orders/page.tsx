@@ -264,7 +264,13 @@ export default function OrdersPage() {
                     </div>
                   )}
                   {order.status === 'PENDING' && order.buyerId === user?.id && (
-                    <p className="text-sm text-amber-700 flex items-center gap-2">⏳ En attente de confirmation du vendeur...</p>
+                    <div>
+                      <p className="text-sm text-amber-700 flex items-center gap-2 mb-2">⏳ En attente de confirmation du vendeur...</p>
+                      <button onClick={() => updateStatus(order.id, 'CANCELLED')}
+                        className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200">
+                        ❌ Annuler ma commande
+                      </button>
+                    </div>
                   )}
 
                   {/* Étape 2 : Vendeur expédie */}
