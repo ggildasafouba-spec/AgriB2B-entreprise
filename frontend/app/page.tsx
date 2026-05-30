@@ -61,7 +61,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="text-xl text-green-100 font-medium italic mt-2">
-                "La terre produit, AgriB2B distribue"
+                &laquo; La terre produit, AgriB2B distribue &raquo;
               </p>
               <p className="text-lg text-green-200 max-w-3xl mt-3">
                 Connecter les producteurs, les acheteurs, les transporteurs et les solutions de paiement mobile en toute simplicité.

@@ -332,7 +332,7 @@ export default function OrdersPage() {
                       </Link>
                     )
                   )
-                )}}
+                )}
 
                 {/* Paiement échelonné (entreprises uniquement) */}
                 {user?.role === 'BUYER' && user?.accountType === 'COMPANY' && order.status !== 'CANCELLED' && (
