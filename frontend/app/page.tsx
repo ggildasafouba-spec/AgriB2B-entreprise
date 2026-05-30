@@ -55,7 +55,7 @@ export default function Home() {
             {/* Image hero */}
             <div className="relative h-64 md:h-80">
               <img
-                src="https://images.unsplash.com/photo-1592982537447-6f2a6a0c7c18?w=1200&h=400&fit=crop"
+                src="https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=1200&h=400&fit=crop"
                 alt="Agriculture africaine"
                 className="w-full h-full object-cover"
               />
