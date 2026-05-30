@@ -30,7 +30,8 @@ export default function DashboardPage() {
       <div className="max-w-3xl mx-auto py-8">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-bold text-gray-900">🌾 Bienvenue sur la plateforme AgriB2B</h1>
-          <p className="text-gray-500 mt-2 text-lg">Bonjour <span className="font-semibold text-green-700">{user?.name}</span>, que souhaitez-vous faire aujourd'hui ?</p>
+          <p className="text-green-700 mt-2 text-lg font-bold italic">&laquo; La terre produit, AgriB2B distribue &raquo;</p>
+          <p className="text-gray-500 mt-2">Bonjour <span className="font-semibold text-green-700">{user?.name}</span>, que souhaitez-vous faire aujourd&apos;hui ?</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
