@@ -42,7 +42,7 @@ export default function TransportPage() {
     estimatedDays: 0,
   });
 
-  const isTransporter = user?.role === 'TRANSPORTER';
+  const isTransporter = true; // Tous les utilisateurs peuvent proposer des tarifs
 
   useEffect(() => {
     loadRates();
