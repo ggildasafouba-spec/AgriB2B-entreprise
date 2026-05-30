@@ -51,27 +51,18 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 py-16">
         <div className="text-center mb-16">
-          <div className="mx-auto max-w-5xl rounded-[2rem] border border-green-100 bg-white/90 overflow-hidden shadow-xl shadow-green-100">
-            {/* Image hero */}
-            <div className="relative h-64 md:h-80">
-              <img
-                src="https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=1200&h=400&fit=crop"
-                alt="Agriculture africaine"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-white via-white/40 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12">
-                <div className="inline-flex items-center gap-4 mb-4">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-[1.5rem] bg-green-600 text-white text-3xl shadow-lg">🌾</div>
-                  <div className="text-left">
-                    <p className="text-sm uppercase tracking-[0.3em] text-green-600 font-semibold">AgriB2B</p>
-                    <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">La plateforme agricole B2B.</h1>
-                  </div>
+          <div className="mx-auto max-w-5xl rounded-[2rem] overflow-hidden shadow-xl shadow-green-100">
+            <div className="bg-gradient-to-br from-green-600 to-green-800 p-12 md:p-16">
+              <div className="inline-flex items-center gap-4 mb-6">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-[1.5rem] bg-white/20 text-white text-3xl shadow-lg">🌾</div>
+                <div className="text-left">
+                  <p className="text-sm uppercase tracking-[0.3em] text-green-200 font-semibold">AgriB2B</p>
+                  <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight">La plateforme agricole B2B.</h1>
                 </div>
-                <p className="text-lg text-gray-700 max-w-3xl">
-                  Connecter les producteurs, les acheteurs, les transporteurs et les solutions de paiement mobile en toute simplicité.
-                </p>
               </div>
+              <p className="text-lg text-green-100 max-w-3xl">
+                Connecter les producteurs, les acheteurs, les transporteurs et les solutions de paiement mobile en toute simplicité.
+              </p>
             </div>
           </div>
         </div>
@@ -89,7 +80,7 @@ export default function Home() {
             color="from-blue-500 to-indigo-600"
             title="Journal Agricole"
             description="Actualités du marché, prix des produits par région, conseils de saison et tendances agricoles au Cameroun."
-            image="https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=400&h=200&fit=crop"
+            image="https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400&h=200&fit=crop"
           />
           <FeatureCard
             icon="🚛"
