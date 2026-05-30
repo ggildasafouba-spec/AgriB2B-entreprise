@@ -118,15 +118,40 @@ export class AdminService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error('Utilisateur introuvable');
 
-    // Supprimer toutes les données liées
+    // Supprimer toutes les données liées (dans le bon ordre pour respecter les contraintes)
+    // 1. Livraisons et tracking
+    const deliveries = await this.prisma.delivery.findMany({ where: { OR: [{ transporterId: userId }, { order: { OR: [{ buyerId: userId }, { sellerId: userId }] } }] } });
+    for (const d of deliveries) {
+      await this.prisma.deliveryTracking.deleteMany({ where: { deliveryId: d.id } });
+    }
+    await this.prisma.delivery.deleteMany({ where: { OR: [{ transporterId: userId }, { order: { OR: [{ buyerId: userId }, { sellerId: userId }] } }] } });
+
+    // 2. Commandes et données liées
+    const orders = await this.prisma.order.findMany({ where: { OR: [{ buyerId: userId }, { sellerId: userId }] } });
+    const orderIds = orders.map(o => o.id);
+    if (orderIds.length > 0) {
+      await this.prisma.escrow.deleteMany({ where: { orderId: { in: orderIds } } });
+      await this.prisma.payment.deleteMany({ where: { orderId: { in: orderIds } } });
+      await this.prisma.orderItem.deleteMany({ where: { orderId: { in: orderIds } } });
+      await this.prisma.message.deleteMany({ where: { orderId: { in: orderIds } } });
+    }
+    await this.prisma.order.deleteMany({ where: { OR: [{ buyerId: userId }, { sellerId: userId }] } });
+
+    // 3. Produits et stock
+    const products = await this.prisma.product.findMany({ where: { sellerId: userId } });
+    const productIds = products.map(p => p.id);
+    if (productIds.length > 0) {
+      await this.prisma.stock.deleteMany({ where: { productId: { in: productIds } } });
+      await this.prisma.product.deleteMany({ where: { sellerId: userId } });
+    }
+
+    // 4. Autres données
     await this.prisma.notification.deleteMany({ where: { userId } });
     await this.prisma.message.deleteMany({ where: { OR: [{ senderId: userId }, { receiverId: userId }] } });
     await this.prisma.kyc.deleteMany({ where: { userId } });
     await this.prisma.transportRate.deleteMany({ where: { transporterId: userId } });
-    await this.prisma.deliveryTracking.deleteMany({ where: { delivery: { transporterId: userId } } });
-    await this.prisma.delivery.deleteMany({ where: { transporterId: userId } });
 
-    // Supprimer l'utilisateur
+    // 5. Supprimer l'utilisateur
     await this.prisma.user.delete({ where: { id: userId } });
 
     return { message: `Utilisateur ${user.name} (${user.email}) supprimé avec succès` };
