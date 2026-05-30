@@ -81,6 +81,7 @@ export default function Home() {
             title="Journal Agricole"
             description="Actualités du marché, prix des produits par région, conseils de saison et tendances agricoles au Cameroun."
             image="https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=400&h=200&fit=crop"
+            href="/journal"
           />
           <FeatureCard
             icon="🚛"
@@ -135,9 +136,11 @@ export default function Home() {
   );
 }
 
-function FeatureCard({ icon, color, title, description, image }: any) {
+function FeatureCard({ icon, color, title, description, image, href }: any) {
+  const Wrapper = href ? 'a' : 'div';
+  const props = href ? { href, target: href.startsWith('http') ? '_blank' : undefined } : {};
   return (
-    <div className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+    <Wrapper {...props} className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden group cursor-pointer">
       {/* Image */}
       <div className="relative h-40 overflow-hidden">
         <img
@@ -156,6 +159,6 @@ function FeatureCard({ icon, color, title, description, image }: any) {
         <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
         <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
       </div>
-    </div>
+    </Wrapper>
   );
 }
