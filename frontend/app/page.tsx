@@ -11,7 +11,7 @@ function BrandLogo() {
       </div>
       <div>
         <div className="text-lg font-bold text-green-700">AgriB2B</div>
-        <div className="text-xs text-gray-500 font-semibold italic">La terre produit, AgriB2B distribue</div>
+        <div className="text-xs text-gray-500 font-semibold italic">&laquo; La terre produit, AgriB2B distribue &raquo;</div>
       </div>
     </div>
   );
