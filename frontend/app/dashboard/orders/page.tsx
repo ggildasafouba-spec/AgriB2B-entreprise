@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ordersApi, productsApi, deliveryApi, transportApi, installmentsApi } from '../../../lib/api';
+import { ordersApi, productsApi, deliveryApi, transportApi, installmentsApi, reviewsApi } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
 import toast from 'react-hot-toast';
 import { ShoppingCart, Info, Truck, MapPin, CreditCard } from 'lucide-react';
@@ -296,9 +296,12 @@ export default function OrdersPage() {
                     <p className="text-sm text-purple-700 flex items-center gap-2">🚛 Colis expédié. En attente de confirmation de l'acheteur...</p>
                   )}
 
-                  {/* Étape 4 : Livré */}
+                  {/* Étape 4 : Livré + Avis */}
                   {order.status === 'DELIVERED' && (
-                    <p className="text-sm text-green-700 font-medium flex items-center gap-2">🎉 Commande livrée avec succès ! Paiement libéré au vendeur.</p>
+                    <div>
+                      <p className="text-sm text-green-700 font-medium flex items-center gap-2 mb-3">🎉 Commande livrée avec succès ! Paiement libéré au vendeur.</p>
+                      <ReviewForm orderId={order.id} sellerId={order.sellerId} buyerId={order.buyerId} userId={user?.id} />
+                    </div>
                   )}
 
                   {/* Annulée */}
@@ -432,6 +435,77 @@ function InstallmentStatus({ plan }: { plan: any }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+
+// ── Composant formulaire d'avis ──────────────────────────────────────────────
+function ReviewForm({ orderId, sellerId, buyerId, userId }: { orderId: string; sellerId: string; buyerId: string; userId?: string }) {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  if (submitted) {
+    return (
+      <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700">
+        ⭐ Merci pour votre avis !
+      </div>
+    );
+  }
+
+  const targetId = userId === buyerId ? sellerId : buyerId;
+  const targetLabel = userId === buyerId ? 'le vendeur' : 'l\'acheteur';
+  const reviewType = userId === buyerId ? 'SELLER' : 'BUYER';
+
+  const handleSubmit = async () => {
+    if (rating === 0) return toast.error('Sélectionnez une note');
+    setLoading(true);
+    try {
+      await reviewsApi.create({ orderId, targetId, rating, comment, type: reviewType });
+      toast.success('Avis envoyé !');
+      setSubmitted(true);
+    } catch (err: any) {
+      if (err.response?.data?.message?.includes('déjà noté')) {
+        setSubmitted(true);
+      } else {
+        toast.error(err.response?.data?.message || 'Erreur');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mt-2">
+      <p className="text-sm font-medium text-gray-800 mb-2">⭐ Notez {targetLabel} :</p>
+      <div className="flex gap-1 mb-3">
+        {[1, 2, 3, 4, 5].map(star => (
+          <button
+            key={star}
+            onClick={() => setRating(star)}
+            className={`text-2xl transition ${star <= rating ? 'text-yellow-500' : 'text-gray-300'} hover:text-yellow-400`}
+          >
+            ★
+          </button>
+        ))}
+        {rating > 0 && <span className="text-sm text-gray-500 ml-2 self-center">{rating}/5</span>}
+      </div>
+      <textarea
+        value={comment}
+        onChange={e => setComment(e.target.value)}
+        placeholder="Laissez un commentaire (optionnel)..."
+        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3 resize-none"
+        rows={2}
+      />
+      <button
+        onClick={handleSubmit}
+        disabled={loading || rating === 0}
+        className="px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-medium hover:bg-yellow-600 disabled:opacity-50"
+      >
+        {loading ? 'Envoi...' : 'Envoyer mon avis'}
+      </button>
     </div>
   );
 }
