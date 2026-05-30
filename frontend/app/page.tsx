@@ -60,7 +60,10 @@ export default function Home() {
                   <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight">La plateforme agricole B2B.</h1>
                 </div>
               </div>
-              <p className="text-lg text-green-100 max-w-3xl">
+              <p className="text-xl text-green-100 font-medium italic mt-2">
+                "La terre produit, AgriB2B distribue"
+              </p>
+              <p className="text-lg text-green-200 max-w-3xl mt-3">
                 Connecter les producteurs, les acheteurs, les transporteurs et les solutions de paiement mobile en toute simplicité.
               </p>
             </div>
