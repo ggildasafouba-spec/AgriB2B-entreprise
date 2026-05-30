@@ -246,31 +246,66 @@ export default function OrdersPage() {
                   </div>
                 )}
 
-                {/* Actions */}
-                {(user?.role === 'SELLER' || user?.role === 'ADMIN') && order.status === 'PENDING' && (
-                  <div className="mt-3 flex gap-2">
-                    <button onClick={() => updateStatus(order.id, 'CONFIRMED')}
-                      className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-sm hover:bg-blue-200">
-                      Confirmer
-                    </button>
-                    <button onClick={() => updateStatus(order.id, 'CANCELLED')}
-                      className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm hover:bg-red-200">
-                      Annuler
-                    </button>
-                  </div>
-                )}
-                {(user?.role === 'SELLER' || user?.role === 'ADMIN') && order.status === 'CONFIRMED' && (
-                  <button onClick={() => updateStatus(order.id, 'SHIPPED')}
-                    className="mt-3 px-3 py-1 bg-purple-100 text-purple-700 rounded text-sm hover:bg-purple-200">
-                    Marquer expédiée
-                  </button>
-                )}
-                {user?.role === 'BUYER' && order.status === 'SHIPPED' && (
-                  <button onClick={() => updateStatus(order.id, 'DELIVERED')}
-                    className="mt-3 px-3 py-1 bg-green-100 text-green-700 rounded text-sm hover:bg-green-200">
-                    Confirmer réception
-                  </button>
-                )}
+                {/* Actions — Flux de validation */}
+                <div className="mt-4 bg-gray-50 rounded-xl p-4">
+                  {/* Étape 1 : Vendeur accepte ou refuse */}
+                  {order.status === 'PENDING' && order.sellerId === user?.id && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-2">⏳ En attente de votre validation :</p>
+                      <div className="flex gap-2">
+                        <button onClick={() => updateStatus(order.id, 'CONFIRMED')}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 font-medium">
+                          ✅ Accepter la commande
+                        </button>
+                        <button onClick={() => updateStatus(order.id, 'CANCELLED')}
+                          className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200">
+                          ❌ Refuser
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {order.status === 'PENDING' && order.buyerId === user?.id && (
+                    <p className="text-sm text-amber-700 flex items-center gap-2">⏳ En attente de confirmation du vendeur...</p>
+                  )}
+
+                  {/* Étape 2 : Vendeur expédie */}
+                  {order.status === 'CONFIRMED' && order.sellerId === user?.id && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-2">📦 Commande confirmée. Préparez le colis :</p>
+                      <button onClick={() => updateStatus(order.id, 'SHIPPED')}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 font-medium">
+                        🚛 Colis expédié
+                      </button>
+                    </div>
+                  )}
+                  {order.status === 'CONFIRMED' && order.buyerId === user?.id && (
+                    <p className="text-sm text-blue-700 flex items-center gap-2">✅ Commande confirmée par le vendeur. Préparation en cours...</p>
+                  )}
+
+                  {/* Étape 3 : Acheteur confirme réception */}
+                  {order.status === 'SHIPPED' && order.buyerId === user?.id && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-2">🚛 Votre commande est en route. Avez-vous reçu ?</p>
+                      <button onClick={() => updateStatus(order.id, 'DELIVERED')}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 font-medium">
+                        ✅ J'ai bien reçu ma commande
+                      </button>
+                    </div>
+                  )}
+                  {order.status === 'SHIPPED' && order.sellerId === user?.id && (
+                    <p className="text-sm text-purple-700 flex items-center gap-2">🚛 Colis expédié. En attente de confirmation de l'acheteur...</p>
+                  )}
+
+                  {/* Étape 4 : Livré */}
+                  {order.status === 'DELIVERED' && (
+                    <p className="text-sm text-green-700 font-medium flex items-center gap-2">🎉 Commande livrée avec succès ! Paiement libéré au vendeur.</p>
+                  )}
+
+                  {/* Annulée */}
+                  {order.status === 'CANCELLED' && (
+                    <p className="text-sm text-red-600 flex items-center gap-2">❌ Commande annulée.</p>
+                  )}
+                </div>
 
                 {/* Livraison */}
                 {order.delivery ? (
