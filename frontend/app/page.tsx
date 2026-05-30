@@ -80,7 +80,7 @@ export default function Home() {
             color="from-blue-500 to-indigo-600"
             title="Journal Agricole"
             description="Actualités du marché, prix des produits par région, conseils de saison et tendances agricoles au Cameroun."
-            image="https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=400&h=200&fit=crop"
+            image="https://images.unsplash.com/photo-1590650516494-0c8e4a4dd67e?w=400&h=200&fit=crop"
           />
           <FeatureCard
             icon="🚛"
