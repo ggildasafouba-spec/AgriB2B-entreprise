@@ -1,6 +1,8 @@
 'use client';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { TrendingUp, TrendingDown, Calendar, MapPin, ExternalLink } from 'lucide-react';
+import api from '../../lib/api';
 
 const PRIX_DU_JOUR = [
   { produit: 'Cacao (CIF)', prix: '2 368', unite: 'FCFA/kg', tendance: 'down' },
@@ -70,6 +72,21 @@ const ARTICLES = [
 ];
 
 export default function JournalPage() {
+  const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    api.get('/articles/views').then(res => {
+      const counts: Record<string, number> = {};
+      res.data.forEach((v: any) => { counts[v.articleId] = v.views; });
+      setViewCounts(counts);
+    }).catch(() => {});
+  }, []);
+
+  const handleArticleClick = (articleId: string) => {
+    api.post(`/articles/${articleId}/view`).catch(() => {});
+    setViewCounts(prev => ({ ...prev, [articleId]: (prev[articleId] || 0) + 1 }));
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -125,6 +142,7 @@ export default function JournalPage() {
               href={article.lien}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => handleArticleClick(String(article.id))}
               className="bg-white rounded-2xl shadow-md hover:shadow-xl transition overflow-hidden group"
             >
               <div className="relative h-40 overflow-hidden">
@@ -145,7 +163,7 @@ export default function JournalPage() {
                 <div className="flex justify-between items-center text-xs text-gray-400">
                   <span>{article.date}</span>
                   <div className="flex items-center gap-3">
-                    <span>👁 {article.vues} vues</span>
+                    <span>👁 {viewCounts[String(article.id)] || article.vues} vues</span>
                     <span className="flex items-center gap-1">{article.source} <ExternalLink className="w-3 h-3" /></span>
                   </div>
                 </div>

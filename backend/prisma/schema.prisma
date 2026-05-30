@@ -408,3 +408,17 @@ enum InstallmentPlanStatus {
   COMPLETED
   DEFAULTED
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Compteur de vues des articles
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model ArticleView {
+  id        String   @id @default(uuid())
+  articleId String   @unique
+  views     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@index([articleId])
+}
