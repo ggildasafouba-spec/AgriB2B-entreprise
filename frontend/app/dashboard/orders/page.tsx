@@ -89,12 +89,11 @@ export default function OrdersPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Commandes</h2>
-        {user?.role === 'BUYER' && (
-          <button onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-            <ShoppingCart className="w-4 h-4" /> Nouvelle commande
-          </button>
-        )}
+        {/* Tous les utilisateurs peuvent passer une commande */}
+        <button onClick={() => setShowForm(!showForm)}
+          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+          <ShoppingCart className="w-4 h-4" /> Nouvelle commande
+        </button>
       </div>
 
       {/* Bandeau info commission */}
