@@ -51,12 +51,6 @@ export default function RegisterPage() {
     if (form.password !== form.confirmPassword) {
       return toast.error('Les mots de passe ne correspondent pas');
     }
-    if (form.accountType === 'COMPANY' && !form.documentType.trim()) {
-      return toast.error('Veuillez indiquer le type de document de l\'entreprise');
-    }
-    if (form.accountType === 'COMPANY' && !form.documentUrl.trim()) {
-      return toast.error('Veuillez fournir le lien vers un document de l\'entreprise');
-    }
     setLoading(true);
     try {
       const res = await register({
@@ -294,21 +288,6 @@ export default function RegisterPage() {
               )}
 
               {/* Documents entreprise */}
-              {form.accountType === 'COMPANY' && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800 space-y-4">
-                  <p className="font-semibold mb-1">📋 Documents requis pour les entreprises</p>
-                  <Field label="Type de document" required>
-                    <input type="text" value={form.documentType} onChange={e => set('documentType', e.target.value)}
-                      className="input" placeholder="Registre de commerce, statuts, etc." required />
-                  </Field>
-                  <Field label="Lien du document" required>
-                    <input type="url" value={form.documentUrl} onChange={e => set('documentUrl', e.target.value)}
-                      className="input" placeholder="https://..." required />
-                  </Field>
-                  <p className="text-xs">Ces documents permettent de vérifier le statut de votre entreprise.</p>
-                </div>
-              )}
-
               {/* Mot de passe */}
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Mot de passe" required>

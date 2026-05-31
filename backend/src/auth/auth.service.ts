@@ -52,9 +52,10 @@ export class AuthService {
         ? dto.minOrderQty ?? 10
         : dto.minOrderQty ?? 1;
 
-    if (dto.accountType === 'COMPANY' && (!dto.documentType || !dto.documentUrl)) {
-      throw new BadRequestException('Les documents de l\'entreprise sont requis pour l\'inscription.');
-    }
+    // Documents entreprise — optionnels pour l'instant
+    // if (dto.accountType === 'COMPANY' && (!dto.documentType || !dto.documentUrl)) {
+    //   throw new BadRequestException('Les documents de l\'entreprise sont requis pour l\'inscription.');
+    // }
 
     await this.prisma.user.create({
       data: {
