@@ -103,6 +103,7 @@ export default function CGUPage() {
               <li>Des dommages résultant de l'utilisation de la plateforme</li>
               <li>Des transactions entre utilisateurs</li>
               <li>De la véracité des informations publiées par les utilisateurs</li>
+              <li><strong>Des transactions effectuées hors plateforme entre deux utilisateurs inscrits sur AgriB2B.</strong> Toute transaction réalisée en dehors du système de paiement sécurisé (escrow) de la plateforme se fait aux risques et périls des parties concernées.</li>
             </ul>
           </section>
 

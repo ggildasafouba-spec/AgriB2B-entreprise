@@ -453,6 +453,17 @@ function ReviewForm({ orderId, sellerId, buyerId, userId }: { orderId: string; s
   const [comment, setComment] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  // Vérifier si un avis a déjà été donné
+  useEffect(() => {
+    reviewsApi.getOrderReviews(orderId).then(res => {
+      const existing = res.data.find((r: any) => r.reviewerId === userId);
+      if (existing) setSubmitted(true);
+    }).catch(() => {}).finally(() => setChecking(false));
+  }, [orderId, userId]);
+
+  if (checking) return null;
 
   if (submitted) {
     return (
