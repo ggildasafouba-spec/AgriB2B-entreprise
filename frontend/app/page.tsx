@@ -132,6 +132,7 @@ export default function Home() {
           <p className="font-medium text-gray-700">AgriB2B — Plateforme Agricole B2B</p>
           <p className="mt-1">Développée par <span className="font-semibold">Germain AFOUBA</span>, Développeur Full Stack</p>
           <p>& <span className="font-semibold">André Brice VOUNDI ESSAMA</span>, Ingénieur Agronome</p>
+          <p className="mt-3">📧 <a href="mailto:contact.agrib2b@gmail.com" className="text-green-600 hover:underline">contact.agrib2b@gmail.com</a></p>
           <p className="mt-2 text-gray-400">© 2026 AgriB2B. Tous droits réservés.</p>
         </footer>
       </main>
