@@ -8,21 +8,30 @@
   "theme_color": "#16a34a",
   "orientation": "portrait-primary",
   "scope": "/",
+  "id": "/",
   "icons": [
     {
-      "src": "/icons/icon-192x192.svg",
+      "src": "https://ui-avatars.com/api/?name=AB&background=16a34a&color=fff&size=192&rounded=true&bold=true",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icons/icon-192x192.svg",
+      "src": "https://ui-avatars.com/api/?name=AB&background=16a34a&color=fff&size=512&rounded=true&bold=true",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": ["business", "shopping"],
   "lang": "fr",
-  "dir": "ltr"
+  "dir": "ltr",
+  "screenshots": [
+    {
+      "src": "https://ui-avatars.com/api/?name=AgriB2B&background=16a34a&color=fff&size=1280&rounded=false&bold=true&length=7",
+      "sizes": "1280x1280",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ]
 }
