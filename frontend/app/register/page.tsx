@@ -19,6 +19,7 @@ export default function RegisterPage() {
   const [pendingEmail, setPendingEmail] = useState('');
   const [devOtpCode, setDevOtpCode] = useState<string | null>(null);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
     role: '',
@@ -291,12 +292,24 @@ export default function RegisterPage() {
               {/* Mot de passe */}
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Mot de passe" required>
-                  <input type="password" value={form.password} onChange={e => set('password', e.target.value)}
-                    className="input" minLength={6} required />
+                  <div className="relative">
+                    <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={e => set('password', e.target.value)}
+                      className="input pr-10" minLength={6} required />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      {showPassword ? '🙈' : '👁'}
+                    </button>
+                  </div>
                 </Field>
                 <Field label="Confirmer" required>
-                  <input type="password" value={form.confirmPassword} onChange={e => set('confirmPassword', e.target.value)}
-                    className="input" required />
+                  <div className="relative">
+                    <input type={showPassword ? 'text' : 'password'} value={form.confirmPassword} onChange={e => set('confirmPassword', e.target.value)}
+                      className="input pr-10" required />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      {showPassword ? '🙈' : '👁'}
+                    </button>
+                  </div>
                 </Field>
               </div>
 
