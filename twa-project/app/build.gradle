@@ -1,0 +1,39 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace 'africa.mboamarket.twa'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "africa.mboamarket.twa"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+
+        // Digital Asset Links verification
+        manifestPlaceholders = [
+            hostName: "www.mboamarket.africa",
+            defaultUrl: "https://www.mboamarket.africa",
+            launcherName: "AgriB2B",
+            assetStatements: '[{ "relation": ["delegate_permission/common.handle_all_urls"], "target": {"namespace": "android_app", "package_name": "africa.mboamarket.twa", "sha256_cert_fingerprints": ["69:81:1F:8A:71:53:04:E6:C0:B0:3B:EA:59:F7:A2:AD:CF:20:E1:44:9B:C6:EB:02:D6:D9:8E:44:14:28:14:D0"]}}]'
+        ]
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+}
