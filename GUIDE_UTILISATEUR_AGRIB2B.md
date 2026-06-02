@@ -3,7 +3,7 @@
 ## « La terre produit, AgriB2B distribue »
 
 **URL :** https://agri-b2-b-entreprise.vercel.app
-**Contact :** contact.agrib2b@gmail.com
+**Contact :** contact.mboamarket@gmail.com
 
 ---
 
@@ -325,7 +325,7 @@ R : Non. AgriB2B est une plateforme de mise en relation. La qualité des produit
 R : Non. La gestion des stocks est déclarative — c'est le vendeur qui indique ses quantités disponibles. AgriB2B ne vérifie pas les stocks réels.
 
 **Q : Comment supprimer mon compte ?**
-R : Contactez l'administrateur à contact.agrib2b@gmail.com ou demandez la suppression via la messagerie.
+R : Contactez l'administrateur à contact.mboamarket@gmail.com ou demandez la suppression via la messagerie.
 
 **Q : Combien coûte l'utilisation de la plateforme ?**
 R : L'utilisation est gratuite. Seule une commission est prélevée sur les transactions réalisées (5% particuliers, 10% entreprises, 3% transport).
@@ -334,4 +334,4 @@ R : L'utilisation est gratuite. Seule une commission est prélevée sur les tran
 
 *Document mis à jour le 29 mai 2026*
 *AgriB2B — La terre produit, AgriB2B distribue*
-*contact.agrib2b@gmail.com*
+*contact.mboamarket@gmail.com*

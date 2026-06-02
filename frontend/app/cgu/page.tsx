@@ -125,7 +125,7 @@ export default function CGUPage() {
           <section>
             <h2 className="text-lg font-bold text-gray-900">12. Contact</h2>
             <p>Pour toute question relative aux présentes CGU :</p>
-            <p className="font-medium">Email : contact.agrib2b@gmail.com</p>
+            <p className="font-medium">Email : contact.mboamarket@gmail.com</p>
           </section>
 
         </div>
