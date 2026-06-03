@@ -323,7 +323,6 @@ export default function AdminPage() {
                           <option value="BUYER">BUYER</option>
                           <option value="SELLER">SELLER</option>
                           <option value="TRANSPORTER">TRANSPORTER</option>
-                          <option value="ADMIN">ADMIN</option>
                         </select>
                         <button
                           onClick={() => deleteUser(u.id, u.name)}

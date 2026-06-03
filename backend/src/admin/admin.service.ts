@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 const COMMISSION_RATE = 0.05; // Taux moyen de fallback (5% particuliers, 10% entreprises)
@@ -106,6 +106,9 @@ export class AdminService {
   }
 
   async updateUserRole(userId: string, role: string) {
+    if (role === 'ADMIN') {
+      throw new BadRequestException('Impossible d\'attribuer le rôle ADMIN');
+    }
     return this.prisma.user.update({
       where: { id: userId },
       data: { role: role as any },
