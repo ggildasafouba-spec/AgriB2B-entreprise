@@ -318,12 +318,16 @@ export default function AdminPage() {
                         >
                           <MessageCircle className="w-3 h-3" /> Contacter
                         </button>
-                        <select value={u.role} onChange={e => updateRole(u.id, e.target.value)}
-                          className="border border-gray-300 rounded px-2 py-1 text-sm">
-                          <option value="BUYER">BUYER</option>
-                          <option value="SELLER">SELLER</option>
-                          <option value="TRANSPORTER">TRANSPORTER</option>
-                        </select>
+                        {u.role === 'ADMIN' ? (
+                          <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">ADMIN</span>
+                        ) : (
+                          <select value={u.role} onChange={e => updateRole(u.id, e.target.value)}
+                            className="border border-gray-300 rounded px-2 py-1 text-sm">
+                            <option value="BUYER">BUYER</option>
+                            <option value="SELLER">SELLER</option>
+                            <option value="TRANSPORTER">TRANSPORTER</option>
+                          </select>
+                        )}
                         <button
                           onClick={() => deleteUser(u.id, u.name)}
                           className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200"
