@@ -266,12 +266,8 @@ export default function PaymentsPage() {
               {/* Récapitulatif */}
                 <div className="bg-gray-50 rounded-xl p-4 text-sm space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Montant</span>
+                  <span className="text-gray-500">Montant à payer</span>
                   <span className="font-bold text-green-700">{fmt(payModal.totalPrice)}</span>
-                </div>
-                <div className="flex justify-between text-xs text-gray-400">
-                  <span>Commission plateforme (5% entreprises / 10% particuliers)</span>
-                  <span>{fmt(Math.round(payModal.totalPrice * (payModal.seller?.accountType === 'COMPANY' ? 0.05 : 0.10) * 100) / 100)}</span>
                 </div>
               </div>
 
