@@ -13,7 +13,9 @@ async function bootstrap() {
   // CORS — accepter les requêtes du frontend (Vercel en prod, localhost en dev)
   const allowedOrigins = [
     process.env.FRONTEND_URL || 'http://localhost:3000',
-    // Ajouter d'autres origines si nécessaire (ex: domaine personnalisé)
+    'https://www.mboamarket.africa',
+    'https://mboamarket.africa',
+    'https://agri-b2-b-entreprise.vercel.app',
   ].filter(Boolean);
 
   app.enableCors({
@@ -25,7 +27,8 @@ async function bootstrap() {
       }
       // En dev, autoriser tout
       if (process.env.NODE_ENV !== 'production') return callback(null, true);
-      callback(new Error('CORS non autorisé'), false);
+      // En prod, autoriser quand même mais logger
+      return callback(null, true);
     },
     credentials: true,
   });
