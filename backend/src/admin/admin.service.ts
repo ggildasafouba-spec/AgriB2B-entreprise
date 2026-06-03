@@ -98,7 +98,7 @@ export class AdminService {
   async getUsers() {
     return this.prisma.user.findMany({
       select: {
-        id: true, email: true, name: true, role: true,
+        id: true, email: true, name: true, role: true, phone: true,
         accountType: true, kycStatus: true, country: true, region: true, createdAt: true,
       },
       orderBy: { createdAt: 'desc' },

@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { adminApi } from '../../../lib/api';
+import { adminApi, messagesApi } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { TrendingUp, Users, Package, ShoppingCart, Clock, Percent } from 'lucide-react';
+import { TrendingUp, Users, Package, ShoppingCart, Clock, Percent, MessageCircle, Phone } from 'lucide-react';
 
 function fmt(n: number) {
   return n.toLocaleString('fr-FR') + ' FCFA';
@@ -256,7 +256,7 @@ export default function AdminPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  {['Nom', 'Email', 'Type', 'Rôle', 'KYC', 'Pays / Région', 'Actions'].map(h => (
+                  {['Nom', 'Email', 'Téléphone', 'Type', 'Rôle', 'KYC', 'Pays / Région', 'Actions'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
                   ))}
                 </tr>
@@ -266,6 +266,13 @@ export default function AdminPage() {
                   <tr key={u.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-900">{u.name}</td>
                     <td className="px-4 py-3 text-gray-500 text-sm">{u.email}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">
+                      {u.phone ? (
+                        <a href={`tel:${u.phone}`} className="flex items-center gap-1 text-green-700 hover:underline">
+                          <Phone className="w-3 h-3" />{u.phone}
+                        </a>
+                      ) : <span className="text-gray-400">—</span>}
+                    </td>
                     <td className="px-4 py-3">
                       <span className="text-xs text-gray-500">
                         {u.accountType === 'COMPANY' ? '🏢 Entreprise' : '👤 Particulier'}
@@ -275,6 +282,7 @@ export default function AdminPage() {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         u.role === 'ADMIN'  ? 'bg-red-100 text-red-700' :
                         u.role === 'SELLER' ? 'bg-blue-100 text-blue-700' :
+                        u.role === 'TRANSPORTER' ? 'bg-orange-100 text-orange-700' :
                         'bg-gray-100 text-gray-700'
                       }`}>{u.role}</span>
                     </td>
@@ -288,20 +296,42 @@ export default function AdminPage() {
                     <td className="px-4 py-3 text-xs text-gray-500">
                       {[u.region, u.country].filter(Boolean).join(', ') || '—'}
                     </td>
-                    <td className="px-4 py-3 flex gap-2">
-                      <select value={u.role} onChange={e => updateRole(u.id, e.target.value)}
-                        className="border border-gray-300 rounded px-2 py-1 text-sm">
-                        <option value="BUYER">BUYER</option>
-                        <option value="SELLER">SELLER</option>
-                        <option value="TRANSPORTER">TRANSPORTER</option>
-                        <option value="ADMIN">ADMIN</option>
-                      </select>
-                      <button
-                        onClick={() => deleteUser(u.id, u.name)}
-                        className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200"
-                      >
-                        Supprimer
-                      </button>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2 items-center">
+                        <button
+                          onClick={async () => {
+                            try {
+                              await messagesApi.createConversation(u.id, `Admin → ${u.name}`);
+                              toast.success(`Conversation créée avec ${u.name}`);
+                              window.location.href = '/dashboard/messages';
+                            } catch (err: any) {
+                              if (err.response?.status === 409) {
+                                toast.success(`Conversation existante avec ${u.name}`);
+                                window.location.href = '/dashboard/messages';
+                              } else {
+                                toast.error('Erreur lors de la création de la conversation');
+                              }
+                            }
+                          }}
+                          className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs hover:bg-blue-200 flex items-center gap-1"
+                          title={`Envoyer un message à ${u.name}`}
+                        >
+                          <MessageCircle className="w-3 h-3" /> Contacter
+                        </button>
+                        <select value={u.role} onChange={e => updateRole(u.id, e.target.value)}
+                          className="border border-gray-300 rounded px-2 py-1 text-sm">
+                          <option value="BUYER">BUYER</option>
+                          <option value="SELLER">SELLER</option>
+                          <option value="TRANSPORTER">TRANSPORTER</option>
+                          <option value="ADMIN">ADMIN</option>
+                        </select>
+                        <button
+                          onClick={() => deleteUser(u.id, u.name)}
+                          className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200"
+                        >
+                          Supprimer
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
