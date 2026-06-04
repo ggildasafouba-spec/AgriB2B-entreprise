@@ -84,6 +84,8 @@ export class ProductsService {
     if (product.sellerId !== userId && userRole !== 'ADMIN') {
       throw new ForbiddenException('Non autorisé');
     }
+    // Supprimer les références liées au produit
+    await this.prisma.orderItem.deleteMany({ where: { productId: id } });
     await this.prisma.stock.deleteMany({ where: { productId: id } });
     return this.prisma.product.delete({ where: { id } });
   }
