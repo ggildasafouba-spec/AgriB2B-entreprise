@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CommissionService } from '../common/commission.service';
 import { NotchPayService } from './notchpay.service';
@@ -7,6 +7,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class PaymentsService {
+  private readonly logger = new Logger(PaymentsService.name);
+
   constructor(
     private prisma: PrismaService,
     private commissionService: CommissionService,
@@ -35,9 +37,14 @@ export class PaymentsService {
 
     // Initialiser le paiement via NotchPay (Mobile Money)
     let paymentUrl: string | null = null;
+    let notchpayReference: string | null = null;
+
     if (dto.provider !== 'MANUAL') {
       const buyer = await this.prisma.user.findUnique({ where: { id: userId } });
-      const callbackUrl = `${process.env.FRONTEND_URL || 'https://www.mboamarket.africa'}/dashboard/payments`;
+      const backendUrl = process.env.BACKEND_URL || process.env.RAILWAY_PUBLIC_DOMAIN
+        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+        : 'http://localhost:4000';
+      const callbackUrl = `${backendUrl}/payments/callback`;
 
       const notchPayResult = await this.notchPay.initializePayment({
         amount: order.totalPrice,
@@ -51,6 +58,23 @@ export class PaymentsService {
       });
 
       paymentUrl = notchPayResult.authorization_url;
+      notchpayReference = notchPayResult.notchpayReference;
+
+      // Si on a une référence NotchPay et pas d'URL de paiement (API directe),
+      // lancer un Direct Charge pour envoyer le prompt USSD au client
+      if (notchpayReference && !notchPayResult.simulated) {
+        const channel = this.notchPay.getChannelForProvider(dto.provider);
+        try {
+          await this.notchPay.directCharge(notchpayReference, {
+            channel,
+            phone: dto.phone,
+          });
+          this.logger.log(`Direct charge sent to ${dto.phone} via ${channel}`);
+        } catch (err: any) {
+          this.logger.warn(`Direct charge failed (will fallback to checkout URL): ${err.message}`);
+          // Si le direct charge échoue, on continue avec l'URL de checkout
+        }
+      }
     }
 
     const payment = await this.prisma.payment.upsert({
@@ -59,7 +83,7 @@ export class PaymentsService {
         provider: dto.provider as any,
         phone: dto.phone,
         amount: order.totalPrice,
-        transactionId,
+        transactionId: notchpayReference || transactionId,
         status: 'PENDING',
       },
       create: {
@@ -67,7 +91,7 @@ export class PaymentsService {
         provider: dto.provider as any,
         phone: dto.phone,
         amount: order.totalPrice,
-        transactionId,
+        transactionId: notchpayReference || transactionId,
         status: 'PENDING',
       },
     });
@@ -80,25 +104,27 @@ export class PaymentsService {
           title: dto.provider === 'MANUAL' ? '🧾 Paiement en attente' : '⏳ Paiement en attente',
           message: dto.provider === 'MANUAL'
             ? `Votre virement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA a été enregistré et est en attente de validation. Réf: ${transactionId}`
-            : `Votre paiement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA via ${this.providerLabel(dto.provider)} est en attente de confirmation. Réf: ${transactionId}`,
+            : `Votre paiement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA via ${this.providerLabel(dto.provider)} est en cours. Validez sur votre téléphone.`,
         },
         {
           userId: order.sellerId,
           title: '💰 Paiement en attente',
-          message: `Le paiement de la commande #${dto.orderId.slice(0, 8)} (${order.totalPrice.toLocaleString('fr-FR')} FCFA) est en attente de validation. Réf: ${transactionId}`,
+          message: `Le paiement de la commande #${dto.orderId.slice(0, 8)} (${order.totalPrice.toLocaleString('fr-FR')} FCFA) est en attente de validation.`,
         },
       ],
     });
 
     return {
       success: true,
-      transactionId,
+      transactionId: notchpayReference || transactionId,
       provider: dto.provider,
       amount: order.totalPrice,
       paymentUrl,
       message: dto.provider === 'MANUAL'
         ? `Virement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA enregistré. Réf: ${transactionId}`
-        : `Paiement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA initié via ${this.providerLabel(dto.provider)}`,
+        : paymentUrl
+          ? `Paiement initié. Complétez le paiement sur la page de paiement.`
+          : `Paiement initié via ${this.providerLabel(dto.provider)}. Validez la transaction sur votre téléphone.`,
     };
   }
 
@@ -115,6 +141,48 @@ export class PaymentsService {
     return payment;
   }
 
+  // ─── Vérifier un paiement via NotchPay et mettre à jour en BDD ─────────────
+  async verifyAndUpdatePayment(reference: string, userId: string) {
+    const payment = await this.prisma.payment.findFirst({
+      where: { transactionId: reference },
+      include: { order: true },
+    });
+
+    if (!payment) throw new NotFoundException('Paiement introuvable');
+
+    const order = payment.order;
+    if (order.buyerId !== userId && order.sellerId !== userId) {
+      throw new BadRequestException('Non autorisé');
+    }
+
+    // Si déjà payé, retourner le statut
+    if (payment.status === 'SUCCESS') {
+      return { status: 'SUCCESS', message: 'Paiement déjà confirmé', payment };
+    }
+
+    // Vérifier côté NotchPay
+    try {
+      const verification = await this.notchPay.verifyPayment(reference);
+
+      if (verification.status === 'complete') {
+        await this.markPaymentSuccess(payment.id, payment.orderId);
+        return { status: 'SUCCESS', message: 'Paiement confirmé' };
+      } else if (verification.status === 'failed' || verification.status === 'expired') {
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: { status: 'FAILED' },
+        });
+        return { status: 'FAILED', message: 'Le paiement a échoué ou expiré' };
+      }
+
+      return { status: 'PENDING', message: 'Paiement en cours de traitement', notchpayStatus: verification.status };
+    } catch (err: any) {
+      this.logger.error(`Verify payment error: ${err.message}`);
+      return { status: 'PENDING', message: 'Impossible de vérifier le paiement pour le moment' };
+    }
+  }
+
+  // ─── Confirmation manuelle (vendeur/admin) ─────────────────────────────────
   async confirmPayment(orderId: string, dto: { status: 'SUCCESS' | 'FAILED' }, userId: string, role: string) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
@@ -129,35 +197,12 @@ export class PaymentsService {
       throw new ConflictException('Le paiement a déjà été confirmé');
     }
 
-    const updatedPayment = await this.prisma.payment.update({
-      where: { orderId },
-      data: { status: dto.status },
-    });
-
-    if (dto.status === 'SUCCESS' && order.status === 'PENDING') {
-      await this.prisma.order.update({ where: { id: orderId }, data: { status: 'CONFIRMED' } });
-
-      // Calculate and store commission in Escrow
-      const commissionDetails = this.commissionService.getCommissionDetails(
-        order.totalPrice,
-        order.seller.accountType as any,
-        order.seller.role,
-      );
-
-      await this.prisma.escrow.upsert({
+    if (dto.status === 'SUCCESS') {
+      await this.markPaymentSuccess(order.payment.id, orderId);
+    } else {
+      await this.prisma.payment.update({
         where: { orderId },
-        update: {
-          amount: order.totalPrice,
-          commission: commissionDetails.commission,
-          sellerAmount: commissionDetails.sellerAmount,
-        },
-        create: {
-          orderId,
-          amount: order.totalPrice,
-          commission: commissionDetails.commission,
-          sellerAmount: commissionDetails.sellerAmount,
-          status: 'HELD',
-        },
+        data: { status: 'FAILED' },
       });
     }
 
@@ -180,88 +225,184 @@ export class PaymentsService {
       ],
     });
 
-    return updatedPayment;
+    const updated = await this.prisma.payment.findUnique({ where: { orderId } });
+    return updated;
   }
 
-  // ─── Webhook NotchPay (appelé par NotchPay quand le paiement est complété) ──
-  async handleWebhook(event: any) {
+  // ─── Webhook NotchPay ──────────────────────────────────────────────────────
+  async handleWebhook(event: any, signature?: string, rawBody?: Buffer) {
+    // Vérification de signature si disponible
+    if (signature && rawBody) {
+      const payload = rawBody.toString('utf-8');
+      const isValid = this.notchPay.verifyWebhookSignature(payload, signature);
+      if (!isValid) {
+        this.logger.warn('Invalid webhook signature — rejecting');
+        return { received: false, reason: 'Invalid signature' };
+      }
+    }
+
     const { type, data } = event;
+    this.logger.log(`Webhook received: ${type} — ref: ${data?.reference || 'unknown'}`);
 
     if (type === 'payment.complete') {
       const reference = data?.reference;
       if (!reference) return { received: true };
 
-      // Trouver le paiement par transactionId
       const payment = await this.prisma.payment.findFirst({
         where: { transactionId: reference },
-        include: { order: { include: { seller: true } } },
       });
 
       if (payment && payment.status !== 'SUCCESS') {
+        await this.markPaymentSuccess(payment.id, payment.orderId);
+        this.logger.log(`Payment ${reference} marked as SUCCESS via webhook`);
+      }
+    }
+
+    if (type === 'payment.failed') {
+      const reference = data?.reference;
+      if (!reference) return { received: true };
+
+      const payment = await this.prisma.payment.findFirst({
+        where: { transactionId: reference },
+      });
+
+      if (payment && payment.status === 'PENDING') {
         await this.prisma.payment.update({
           where: { id: payment.id },
-          data: { status: 'SUCCESS' },
+          data: { status: 'FAILED' },
         });
 
-        // Confirmer la commande
-        if (payment.order.status === 'PENDING') {
-          await this.prisma.order.update({
-            where: { id: payment.orderId },
-            data: { status: 'CONFIRMED' },
-          });
-
-          // Créer/Mettre à jour l'escrow
-          const commissionDetails = this.commissionService.getCommissionDetails(
-            payment.order.totalPrice,
-            payment.order.seller.accountType as any,
-            payment.order.seller.role,
-          );
-
-          await this.prisma.escrow.upsert({
-            where: { orderId: payment.orderId },
-            update: {
-              amount: payment.order.totalPrice,
-              commission: commissionDetails.commission,
-              sellerAmount: commissionDetails.sellerAmount,
+        // Notifier l'acheteur
+        const order = await this.prisma.order.findUnique({ where: { id: payment.orderId } });
+        if (order) {
+          await this.prisma.notification.create({
+            data: {
+              userId: order.buyerId,
+              title: '❌ Paiement échoué',
+              message: `Votre paiement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA a échoué. Veuillez réessayer.`,
             },
-            create: {
-              orderId: payment.orderId,
-              amount: payment.order.totalPrice,
-              commission: commissionDetails.commission,
-              sellerAmount: commissionDetails.sellerAmount,
-              status: 'HELD',
-            },
-          });
-
-          // Notifications
-          await this.prisma.notification.createMany({
-            data: [
-              {
-                userId: payment.order.buyerId,
-                title: '✅ Paiement validé',
-                message: `Votre paiement de ${payment.order.totalPrice.toLocaleString('fr-FR')} FCFA a été confirmé.`,
-              },
-              {
-                userId: payment.order.sellerId,
-                title: '✅ Paiement reçu',
-                message: `Le paiement de la commande #${payment.orderId.slice(0, 8)} a été confirmé.`,
-              },
-            ],
           });
         }
+        this.logger.log(`Payment ${reference} marked as FAILED via webhook`);
       }
     }
 
     return { received: true };
   }
 
-  // ─── Vérifier le statut d'un paiement via NotchPay ─────────────────────────
+  // ─── Callback : Quand l'utilisateur revient de NotchPay ────────────────────
+  async handleCallbackVerification(reference: string, trxref?: string) {
+    const ref = reference || trxref;
+    if (!ref) return;
+
+    try {
+      const verification = await this.notchPay.verifyPayment(ref);
+
+      const payment = await this.prisma.payment.findFirst({
+        where: {
+          OR: [
+            { transactionId: ref },
+            { transactionId: trxref },
+          ],
+        },
+      });
+
+      if (!payment) {
+        this.logger.warn(`Callback: no payment found for reference ${ref}`);
+        return;
+      }
+
+      if (verification.status === 'complete' && payment.status !== 'SUCCESS') {
+        await this.markPaymentSuccess(payment.id, payment.orderId);
+        this.logger.log(`Payment ${ref} confirmed via callback verification`);
+      } else if (verification.status === 'failed' && payment.status === 'PENDING') {
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: { status: 'FAILED' },
+        });
+      }
+    } catch (err: any) {
+      this.logger.error(`Callback verification error: ${err.message}`);
+    }
+  }
+
+  // ─── Vérifier le statut d'un paiement via NotchPay (utilitaire) ────────────
   async verifyPaymentWithNotchPay(reference: string) {
     return this.notchPay.verifyPayment(reference);
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PRIVATE HELPERS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Marque un paiement comme SUCCESS, confirme la commande et crée l'escrow
+   */
+  private async markPaymentSuccess(paymentId: string, orderId: string) {
+    const payment = await this.prisma.payment.update({
+      where: { id: paymentId },
+      data: { status: 'SUCCESS' },
+    });
+
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { seller: true },
+    });
+
+    if (!order) return payment;
+
+    // Confirmer la commande si encore en PENDING
+    if (order.status === 'PENDING') {
+      await this.prisma.order.update({
+        where: { id: orderId },
+        data: { status: 'CONFIRMED' },
+      });
+    }
+
+    // Calculer et créer l'escrow avec commission
+    const commissionDetails = this.commissionService.getCommissionDetails(
+      order.totalPrice,
+      order.seller.accountType as any,
+      order.seller.role,
+    );
+
+    await this.prisma.escrow.upsert({
+      where: { orderId },
+      update: {
+        amount: order.totalPrice,
+        commission: commissionDetails.commission,
+        sellerAmount: commissionDetails.sellerAmount,
+      },
+      create: {
+        orderId,
+        amount: order.totalPrice,
+        commission: commissionDetails.commission,
+        sellerAmount: commissionDetails.sellerAmount,
+        status: 'HELD',
+      },
+    });
+
+    // Notifications
+    await this.prisma.notification.createMany({
+      data: [
+        {
+          userId: order.buyerId,
+          title: '✅ Paiement validé',
+          message: `Votre paiement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA a été confirmé avec succès.`,
+        },
+        {
+          userId: order.sellerId,
+          title: '✅ Paiement reçu',
+          message: `Le paiement de la commande #${orderId.slice(0, 8)} (${order.totalPrice.toLocaleString('fr-FR')} FCFA) a été confirmé.`,
+        },
+      ],
+    });
+
+    return payment;
+  }
+
   private providerLabel(provider: string): string {
-    const labels: any = {
+    const labels: Record<string, string> = {
       MTN_MOMO: 'MTN Mobile Money',
       ORANGE_MONEY: 'Orange Money',
       MANUAL: 'Virement bancaire',

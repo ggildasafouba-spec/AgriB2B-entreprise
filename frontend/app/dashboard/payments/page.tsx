@@ -37,12 +37,47 @@ export default function PaymentsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Vérifier si l'utilisateur revient d'un paiement NotchPay (callback)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    const status = params.get('status');
+
+    if (ref) {
+      if (status === 'complete' || status === 'successful') {
+        toast.success('✅ Paiement confirmé avec succès !');
+      } else if (status === 'failed' || status === 'canceled') {
+        toast.error('❌ Le paiement a été annulé ou a échoué.');
+      } else {
+        toast('⏳ Paiement en cours de vérification...', { icon: '🔄' });
+        // Vérifier le statut via l'API
+        paymentsApi.verify(ref).then(res => {
+          if (res.data.status === 'SUCCESS') {
+            toast.success('✅ Paiement confirmé !');
+            ordersApi.getAll().then(r => setOrders(r.data));
+          }
+        }).catch(() => {});
+      }
+      // Nettoyer l'URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   const handlePay = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!payModal) return;
     setPaying(true);
     try {
       const res = await paymentsApi.initiate(payModal.id, payForm.provider, payForm.phone);
+
+      // Si NotchPay retourne une URL de checkout, rediriger l'utilisateur
+      if (res.data.paymentUrl) {
+        toast.success('Redirection vers la page de paiement...');
+        window.location.href = res.data.paymentUrl;
+        return;
+      }
+
       toast.success(`✅ ${res.data.message}`);
       setPayModal(null);
       const updated = await ordersApi.getAll();

@@ -91,6 +91,7 @@ export const paymentsApi = {
   initiate: (orderId: string, provider: string, phone: string) =>
     api.post('/payments/initiate', { orderId, provider, phone }),
   getStatus: (orderId: string) => api.get(`/payments/status/${orderId}`),
+  verify: (reference: string) => api.get(`/payments/verify/${reference}`),
   confirm: (orderId: string, status: string) => api.put(`/payments/${orderId}/confirm`, { status }),
 };
 

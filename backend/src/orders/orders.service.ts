@@ -152,15 +152,49 @@ export class OrdersService {
     }
 
     if (dto.status === 'CANCELLED' && order.escrow) {
+      // Annuler l'escrow — la commission n'est PAS prélevée
       await this.prisma.escrow.update({
         where: { orderId: id },
-        data: { status: 'REFUNDED' },
+        data: {
+          status: 'REFUNDED',
+          commission: 0,
+          sellerAmount: 0,
+        },
       });
+
+      // Marquer le paiement comme remboursé si existant
+      const payment = await this.prisma.payment.findUnique({ where: { orderId: id } });
+      if (payment && payment.status === 'SUCCESS') {
+        await this.prisma.payment.update({
+          where: { orderId: id },
+          data: { status: 'REFUNDED' },
+        });
+      }
+
+      // Restituer le stock
+      const orderItems = await this.prisma.orderItem.findMany({ where: { orderId: id } });
+      for (const item of orderItems) {
+        await this.prisma.stock.update({
+          where: { productId: item.productId },
+          data: { quantity: { increment: item.quantity } },
+        }).catch(() => {}); // Ignorer si le stock n'existe plus
+      }
+
+      // Notifier l'acheteur
       await this.prisma.notification.create({
         data: {
           userId: order.buyerId,
-          title: 'Commande annulée — Remboursement',
-          message: `Votre commande #${id.slice(0, 8)} a été annulée. Le montant de ${order.totalPrice.toLocaleString('fr-FR')} FCFA sera remboursé.`,
+          title: '🚫 Commande annulée — Remboursement',
+          message: `Votre commande #${id.slice(0, 8)} a été annulée. Le montant de ${order.totalPrice.toLocaleString('fr-FR')} FCFA sera remboursé. Aucune commission n'a été prélevée.`,
+        },
+      });
+
+      // Notifier le vendeur
+      await this.prisma.notification.create({
+        data: {
+          userId: order.sellerId,
+          title: '🚫 Commande annulée',
+          message: `La commande #${id.slice(0, 8)} (${order.totalPrice.toLocaleString('fr-FR')} FCFA) a été annulée. Aucune commission n'a été prélevée et le stock a été restitué.`,
         },
       });
     }

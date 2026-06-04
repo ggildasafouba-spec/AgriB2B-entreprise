@@ -8,7 +8,9 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   console.log('[BOOT] bootstrap() called');
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true, // Nécessaire pour la vérification de signature des webhooks NotchPay
+  });
 
   // CORS — accepter les requêtes du frontend (Vercel en prod, localhost en dev)
   const allowedOrigins = [
