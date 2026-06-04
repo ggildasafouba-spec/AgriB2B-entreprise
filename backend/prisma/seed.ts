@@ -7,23 +7,23 @@ async function main() {
   console.log('🌱 Seeding AgriB2B database...');
 
   // ── Admin ──────────────────────────────────────────────────────────────────
-  const adminPassword = await bcrypt.hash('admin123', 10);
+  const adminPassword = await bcrypt.hash('Fanalya@1704', 10);
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@agrib2b.com' },
+    where: { email: 'ggildasafouba@gmail.com' },
     update: {
       isVerified: true,
       kycStatus: 'VERIFIED',
       role: 'ADMIN',
     },
     create: {
-      email: 'admin@agrib2b.com',
+      email: 'ggildasafouba@gmail.com',
       password: adminPassword,
-      name: 'Admin AgriB2B',
+      name: 'AFOUBA Germain',
       role: 'ADMIN',
       accountType: 'COMPANY',
-      phone: '+237600000000',
-      country: 'Cameroun',
-      region: 'Centre',
+      phone: '+33609231509',
+      country: 'France',
+      region: 'Ile-de-France',
       kycStatus: 'VERIFIED',
       isVerified: true,
     },
@@ -142,7 +142,7 @@ async function main() {
 
   console.log('\n✅ Seed AgriB2B terminé avec succès !');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('👑 ADMIN        : admin@agrib2b.com      / admin123');
+  console.log('👑 ADMIN        : ggildasafouba@gmail.com / Fanalya@1704');
   console.log('🌱 VENDEUR      : vendeur@agrib2b.com    / seller123');
   console.log('🛒 ACHETEUR     : acheteur@agrib2b.com   / buyer123');
   console.log('🚛 TRANSPORTEUR : transport@agrib2b.com  / transport123');

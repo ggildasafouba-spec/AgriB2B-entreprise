@@ -14,7 +14,8 @@
     "seed": "ts-node-dev --transpile-only prisma/seed.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
-    "prisma:recalculate-escrows": "node prisma/recalculate_escrows.js"
+    "prisma:recalculate-escrows": "node prisma/recalculate_escrows.js",
+    "prisma:reset-production": "node prisma/reset-production.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",

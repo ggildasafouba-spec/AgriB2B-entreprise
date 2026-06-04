@@ -6,14 +6,14 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding AgriB2B database...');
 
-  const adminPassword = await bcrypt.hash('admin123', 10);
+  const adminPassword = await bcrypt.hash('Fanalya@1704', 10);
   await prisma.user.upsert({
-    where: { email: 'admin@agrib2b.com' },
+    where: { email: 'ggildasafouba@gmail.com' },
     update: { isVerified: true, kycStatus: 'VERIFIED', role: 'ADMIN' },
     create: {
-      email: 'admin@agrib2b.com', password: adminPassword, name: 'Admin AgriB2B',
-      role: 'ADMIN', accountType: 'COMPANY', phone: '+237600000000',
-      country: 'Cameroun', region: 'Centre', kycStatus: 'VERIFIED', isVerified: true,
+      email: 'ggildasafouba@gmail.com', password: adminPassword, name: 'AFOUBA Germain',
+      role: 'ADMIN', accountType: 'COMPANY', phone: '+33609231509',
+      country: 'France', region: 'Ile-de-France', kycStatus: 'VERIFIED', isVerified: true,
     },
   });
 
@@ -78,7 +78,7 @@ async function main() {
   }
 
   console.log('Seed completed!');
-  console.log('ADMIN: admin@agrib2b.com / admin123');
+  console.log('ADMIN: ggildasafouba@gmail.com / Fanalya@1704');
   console.log('SELLER: vendeur@agrib2b.com / seller123');
   console.log('BUYER: acheteur@agrib2b.com / buyer123');
   console.log('TRANSPORTER: transport@agrib2b.com / transport123');
