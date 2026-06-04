@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CommissionService } from '../common/commission.service';
+import { NotchPayService } from './notchpay.service';
 import { InitiatePaymentDto } from './dto/payment.dto';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -9,6 +10,7 @@ export class PaymentsService {
   constructor(
     private prisma: PrismaService,
     private commissionService: CommissionService,
+    private notchPay: NotchPayService,
   ) {}
 
   // ─── Initier un paiement MTN, Orange ou virement bancaire ────────────────
@@ -29,11 +31,27 @@ export class PaymentsService {
 
     const transactionId = dto.provider === 'MANUAL'
       ? `BANK-${Date.now()}-${uuidv4().slice(0, 8).toUpperCase()}`
-      : await this.simulateMobileMoneyRequest(
-          dto.provider,
-          dto.phone,
-          order.totalPrice,
-        );
+      : uuidv4();
+
+    // Initialiser le paiement via NotchPay (Mobile Money)
+    let paymentUrl: string | null = null;
+    if (dto.provider !== 'MANUAL') {
+      const buyer = await this.prisma.user.findUnique({ where: { id: userId } });
+      const callbackUrl = `${process.env.FRONTEND_URL || 'https://www.mboamarket.africa'}/dashboard/payments`;
+
+      const notchPayResult = await this.notchPay.initializePayment({
+        amount: order.totalPrice,
+        currency: 'XAF',
+        customerName: buyer?.name || 'Client',
+        customerEmail: buyer?.email || '',
+        customerPhone: dto.phone,
+        description: `Commande #${dto.orderId.slice(0, 8)} sur AgriB2B`,
+        reference: transactionId,
+        callbackUrl,
+      });
+
+      paymentUrl = notchPayResult.authorization_url;
+    }
 
     const payment = await this.prisma.payment.upsert({
       where: { orderId: dto.orderId },
@@ -77,9 +95,10 @@ export class PaymentsService {
       transactionId,
       provider: dto.provider,
       amount: order.totalPrice,
+      paymentUrl,
       message: dto.provider === 'MANUAL'
         ? `Virement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA enregistré. Réf: ${transactionId}`
-        : `Paiement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA confirmé via ${this.providerLabel(dto.provider)}`,
+        : `Paiement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA initié via ${this.providerLabel(dto.provider)}`,
     };
   }
 
@@ -164,27 +183,81 @@ export class PaymentsService {
     return updatedPayment;
   }
 
-  // ─── Simulation Mobile Money (remplacer par vraie API en prod) ─────────────
-  private async simulateMobileMoneyRequest(
-    provider: string,
-    phone: string,
-    amount: number,
-  ): Promise<string> {
-    // Simule un délai réseau
-    await new Promise(r => setTimeout(r, 500));
+  // ─── Webhook NotchPay (appelé par NotchPay quand le paiement est complété) ──
+  async handleWebhook(event: any) {
+    const { type, data } = event;
 
-    const prefix = provider === 'MTN_MOMO' ? 'MTN' : provider === 'ORANGE_MONEY' ? 'OM' : 'MAN';
-    const txId = `${prefix}-${Date.now()}-${uuidv4().slice(0, 8).toUpperCase()}`;
+    if (type === 'payment.complete') {
+      const reference = data?.reference;
+      if (!reference) return { received: true };
 
-    console.log(`\n📱 ===== MOBILE MONEY SIMULATION =====`);
-    console.log(`   Provider    : ${provider}`);
-    console.log(`   Téléphone   : ${phone}`);
-    console.log(`   Montant     : ${amount.toLocaleString('fr-FR')} FCFA`);
-    console.log(`   Transaction : ${txId}`);
-    console.log(`   Statut      : SUCCESS (simulé)`);
-    console.log(`=====================================\n`);
+      // Trouver le paiement par transactionId
+      const payment = await this.prisma.payment.findFirst({
+        where: { transactionId: reference },
+        include: { order: { include: { seller: true } } },
+      });
 
-    return txId;
+      if (payment && payment.status !== 'SUCCESS') {
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: { status: 'SUCCESS' },
+        });
+
+        // Confirmer la commande
+        if (payment.order.status === 'PENDING') {
+          await this.prisma.order.update({
+            where: { id: payment.orderId },
+            data: { status: 'CONFIRMED' },
+          });
+
+          // Créer/Mettre à jour l'escrow
+          const commissionDetails = this.commissionService.getCommissionDetails(
+            payment.order.totalPrice,
+            payment.order.seller.accountType as any,
+            payment.order.seller.role,
+          );
+
+          await this.prisma.escrow.upsert({
+            where: { orderId: payment.orderId },
+            update: {
+              amount: payment.order.totalPrice,
+              commission: commissionDetails.commission,
+              sellerAmount: commissionDetails.sellerAmount,
+            },
+            create: {
+              orderId: payment.orderId,
+              amount: payment.order.totalPrice,
+              commission: commissionDetails.commission,
+              sellerAmount: commissionDetails.sellerAmount,
+              status: 'HELD',
+            },
+          });
+
+          // Notifications
+          await this.prisma.notification.createMany({
+            data: [
+              {
+                userId: payment.order.buyerId,
+                title: '✅ Paiement validé',
+                message: `Votre paiement de ${payment.order.totalPrice.toLocaleString('fr-FR')} FCFA a été confirmé.`,
+              },
+              {
+                userId: payment.order.sellerId,
+                title: '✅ Paiement reçu',
+                message: `Le paiement de la commande #${payment.orderId.slice(0, 8)} a été confirmé.`,
+              },
+            ],
+          });
+        }
+      }
+    }
+
+    return { received: true };
+  }
+
+  // ─── Vérifier le statut d'un paiement via NotchPay ─────────────────────────
+  async verifyPaymentWithNotchPay(reference: string) {
+    return this.notchPay.verifyPayment(reference);
   }
 
   private providerLabel(provider: string): string {
