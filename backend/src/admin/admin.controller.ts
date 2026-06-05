@@ -56,9 +56,9 @@ export class AdminController {
   @Post('broadcast/message')
   @ApiOperation({ summary: 'Envoyer un message privé à tous les utilisateurs' })
   broadcastMessage(
+    @Request() req,
     @Body('content') content: string,
     @Body('role') role?: string,
-    @Request() req,
   ) {
     return this.adminService.broadcastMessage(req.user.id, content, role);
   }
