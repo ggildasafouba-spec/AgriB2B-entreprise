@@ -191,3 +191,20 @@ export const deliveryApi = {
     api.put(`/delivery/${deliveryId}/status`, data),
   getMyDeliveries: () => api.get('/delivery/my-deliveries'),
 };
+
+// Journal Agricole (Prix & Articles)
+export const journalApi = {
+  getPrices: () => api.get('/journal/prices'),
+  refreshPrices: () => api.post('/journal/prices/refresh'),
+  getArticles: () => api.get('/journal/articles'),
+  createArticle: (data: {
+    title: string;
+    summary: string;
+    content?: string;
+    category: string;
+    source?: string;
+    sourceUrl?: string;
+    imageUrl?: string;
+  }) => api.post('/journal/articles', data),
+  deleteArticle: (id: string) => api.delete(`/journal/articles/${id}`),
+};
