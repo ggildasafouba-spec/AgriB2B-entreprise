@@ -6,13 +6,18 @@ export class NotchPayService {
   private readonly logger = new Logger(NotchPayService.name);
   private readonly apiUrl = 'https://api.notchpay.co';
   private readonly publicKey: string;
+  private readonly privateKey: string;
   private readonly hashKey: string;
 
   constructor() {
     this.publicKey = process.env.NOTCHPAY_PUBLIC_KEY || '';
+    this.privateKey = process.env.NOTCHPAY_PRIVATE_KEY || '';
     this.hashKey = process.env.NOTCHPAY_HASH_KEY || '';
     if (!this.publicKey) {
       this.logger.warn('NOTCHPAY_PUBLIC_KEY not configured - payments will be simulated');
+    }
+    if (!this.privateKey) {
+      this.logger.warn('NOTCHPAY_PRIVATE_KEY not configured - payouts will be simulated');
     }
   }
 
@@ -199,5 +204,101 @@ export class NotchPayService {
       ORANGE_MONEY: 'cm.orange',
     };
     return channels[provider] || 'cm.mtn';
+  }
+
+  /**
+   * Effectue un transfert (payout) vers un bénéficiaire
+   * Utilisé pour payer les vendeurs et transporteurs
+   */
+  async transfer(params: {
+    amount: number;
+    currency?: string;
+    recipientPhone: string;
+    recipientName: string;
+    channel: string;
+    description: string;
+    reference: string;
+  }) {
+    if (!this.publicKey || !this.privateKey) {
+      this.logger.log(`[SIMULATION] Transfer: ${params.amount} ${params.currency || 'XAF'} -> ${params.recipientPhone} (${params.channel})`);
+      return {
+        reference: params.reference,
+        status: 'complete',
+        simulated: true,
+      };
+    }
+
+    try {
+      const response = await fetch(`${this.apiUrl}/transfers`, {
+        method: 'POST',
+        headers: {
+          'Authorization': this.publicKey,
+          'X-Grant': this.privateKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: params.amount,
+          currency: params.currency || 'XAF',
+          beneficiary_data: {
+            name: params.recipientName,
+            phone: params.recipientPhone,
+          },
+          channel: params.channel,
+          description: params.description,
+          reference: params.reference,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        this.logger.error(`NotchPay transfer error [${response.status}]: ${JSON.stringify(data)}`);
+        throw new Error(data.message || `Erreur de transfert (${response.status})`);
+      }
+
+      this.logger.log(`Transfer initiated: ${params.reference} -> ${params.recipientPhone} (${params.amount} ${params.currency || 'XAF'})`);
+
+      return {
+        id: data.transfer?.id,
+        reference: data.transfer?.reference || params.reference,
+        status: data.transfer?.status || 'pending',
+        simulated: false,
+      };
+    } catch (error: any) {
+      this.logger.error(`NotchPay transfer failed: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Vérifie le statut d'un transfert
+   */
+  async getTransferStatus(transferId: string) {
+    if (!this.publicKey || !this.privateKey) {
+      return { status: 'complete', simulated: true };
+    }
+
+    try {
+      const response = await fetch(`${this.apiUrl}/transfers/${transferId}`, {
+        headers: {
+          'Authorization': this.publicKey,
+          'X-Grant': this.privateKey,
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Erreur de vérification du transfert');
+      }
+
+      return {
+        status: data.transfer?.status || 'pending',
+        amount: data.transfer?.amount,
+        simulated: false,
+      };
+    } catch (error: any) {
+      this.logger.error(`NotchPay getTransferStatus failed: ${error.message}`);
+      throw error;
+    }
   }
 }

@@ -1,13 +1,17 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto, UpdateOrderStatusDto } from './dto/order.dto';
+import { NotchPayService } from '../payments/notchpay.service';
 
 const COMPANY_COMMISSION = 0.10; // 10%
 const INDIVIDUAL_COMMISSION = 0.05; // 5%
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notchPay: NotchPayService,
+  ) {}
 
   async create(dto: CreateOrderDto, buyerId: string) {
     let totalPrice = 0;
@@ -138,6 +142,66 @@ export class OrdersService {
       const sellerAmount = order.escrow.sellerAmount;
       const rate = order.seller?.accountType === 'COMPANY' ? COMPANY_COMMISSION : INDIVIDUAL_COMMISSION;
 
+      // ─── Payout automatique au vendeur ───────────────────────────────
+      const seller = await this.prisma.user.findUnique({ where: { id: order.sellerId } });
+      if (seller?.phone) {
+        try {
+          const channel = seller.phone.startsWith('+23767') || seller.phone.startsWith('+23768')
+            ? 'cm.mtn'
+            : seller.phone.startsWith('+23769')
+              ? 'cm.orange'
+              : 'cm.mtn';
+
+          await this.notchPay.transfer({
+            amount: sellerAmount,
+            currency: 'XAF',
+            recipientPhone: seller.phone,
+            recipientName: seller.name,
+            channel,
+            description: `Paiement commande #${id.slice(0, 8)} - AgriB2B`,
+            reference: `seller-payout-${id.slice(0, 12)}-${Date.now()}`,
+          });
+        } catch (err: any) {
+          // Log l'erreur mais ne bloque pas — l'admin pourra refaire manuellement
+          console.error(`Payout vendeur échoué pour commande ${id}: ${err.message}`);
+        }
+      }
+
+      // ─── Payout automatique au transporteur (si livraison) ───────────
+      const delivery = await this.prisma.delivery.findUnique({ where: { orderId: id } });
+      if (delivery && delivery.transporterId && delivery.transporterAmount > 0) {
+        const transporter = await this.prisma.user.findUnique({ where: { id: delivery.transporterId } });
+        if (transporter?.phone) {
+          try {
+            const channel = transporter.phone.startsWith('+23767') || transporter.phone.startsWith('+23768')
+              ? 'cm.mtn'
+              : transporter.phone.startsWith('+23769')
+                ? 'cm.orange'
+                : 'cm.mtn';
+
+            await this.notchPay.transfer({
+              amount: delivery.transporterAmount,
+              currency: 'XAF',
+              recipientPhone: transporter.phone,
+              recipientName: transporter.name,
+              channel,
+              description: `Livraison commande #${id.slice(0, 8)} - AgriB2B`,
+              reference: `transport-payout-${id.slice(0, 12)}-${Date.now()}`,
+            });
+
+            await this.prisma.notification.create({
+              data: {
+                userId: delivery.transporterId,
+                title: '💰 Paiement reçu',
+                message: `Votre paiement de ${delivery.transporterAmount.toLocaleString('fr-FR')} FCFA pour la livraison de la commande #${id.slice(0, 8)} a été envoyé.`,
+              },
+            });
+          } catch (err: any) {
+            console.error(`Payout transporteur échoué pour commande ${id}: ${err.message}`);
+          }
+        }
+      }
+
       await this.prisma.notification.create({
         data: {
           userId: order.sellerId,
@@ -146,7 +210,7 @@ export class OrdersService {
             `Commande #${id.slice(0, 8)} livrée. ` +
             `Montant total : ${order.totalPrice.toLocaleString('fr-FR')} FCFA. ` +
             `Commission plateforme (${Math.round(rate * 100)}%) : ${commission.toLocaleString('fr-FR')} FCFA. ` +
-            `Montant versé : ${sellerAmount.toLocaleString('fr-FR')} FCFA.`,
+            `Montant envoyé sur votre Mobile Money : ${sellerAmount.toLocaleString('fr-FR')} FCFA.`,
         },
       });
     }
