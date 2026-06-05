@@ -36,17 +36,15 @@ export class AdminService {
       where: { status: 'RELEASED' },
     });
 
-    // Commission transport cumulée (3% sur tous les tarifs actifs)
-    // On calcule la commission potentielle basée sur les tarifs existants
-    const transportRates = await this.prisma.transportRate.findMany({
-      where: { isActive: true },
-      select: { pricePerKg: true, pricePerUnit: true },
+    // Commission transport réellement perçue (basée sur les livraisons effectuées)
+    const deliveryCommissions = await this.prisma.delivery.aggregate({
+      _sum: { commission: true },
+      where: { status: 'DELIVERED' },
     });
-    const transportCommissionTotal = Math.round(
-      transportRates.reduce((sum, rate) => {
-        return sum + (rate.pricePerKg * TRANSPORT_COMMISSION_RATE);
-      }, 0) * 100
-    ) / 100;
+    const transportCommissionTotal = deliveryCommissions._sum.commission || 0;
+
+    // Nombre de tarifs actifs (pour info)
+    const activeTransportRates = transportRatesCount;
 
     // Montant cumulé de TOUTES les commissions (commandes + transport)
     const totalOrderCommissions = allEscrows._sum.commission || 0;
