@@ -25,8 +25,10 @@ export default function AdminPage() {
   const [dashboard, setDashboard]   = useState<any>(null);
   const [users, setUsers]           = useState<any[]>([]);
   const [commissions, setCommissions] = useState<any[]>([]);
-  const [tab, setTab]               = useState<'overview' | 'commissions' | 'users'>('overview');
+  const [tab, setTab]               = useState<'overview' | 'commissions' | 'users' | 'broadcast'>('overview');
   const [loading, setLoading]       = useState(true);
+  const [broadcastForm, setBroadcastForm] = useState({ title: '', message: '', content: '', role: '', type: 'notification' as 'notification' | 'message' });
+  const [sending, setSending]       = useState(false);
 
   useEffect(() => {
     if (user && user.role !== 'ADMIN') { router.push('/dashboard'); return; }
@@ -144,12 +146,12 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-6 w-fit">
-        {(['overview', 'commissions', 'users'] as const).map(t => (
+        {(['overview', 'commissions', 'users', 'broadcast'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               tab === t ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'
             }`}>
-            {t === 'overview' ? 'Vue générale' : t === 'commissions' ? 'Commissions' : 'Utilisateurs'}
+            {t === 'overview' ? 'Vue générale' : t === 'commissions' ? 'Commissions' : t === 'users' ? 'Utilisateurs' : '📢 Diffusion'}
           </button>
         ))}
       </div>
@@ -340,6 +342,131 @@ export default function AdminPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Diffusion (Broadcast) ── */}
+      {tab === 'broadcast' && (
+        <div className="max-w-2xl">
+          <div className="bg-white rounded-xl shadow p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-1">📢 Diffusion groupée</h3>
+            <p className="text-sm text-gray-500 mb-6">Envoyez une notification ou un message privé à tous les utilisateurs (ou par rôle).</p>
+
+            <div className="space-y-4">
+              {/* Type de diffusion */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Type de diffusion</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setBroadcastForm(f => ({ ...f, type: 'notification' }))}
+                    className={`p-4 rounded-xl border-2 text-left transition ${
+                      broadcastForm.type === 'notification' ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <p className="text-2xl mb-1">🔔</p>
+                    <p className="font-medium text-sm">Notification</p>
+                    <p className="text-xs text-gray-500">Apparaît dans la cloche</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBroadcastForm(f => ({ ...f, type: 'message' }))}
+                    className={`p-4 rounded-xl border-2 text-left transition ${
+                      broadcastForm.type === 'message' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <p className="text-2xl mb-1">💬</p>
+                    <p className="font-medium text-sm">Message privé</p>
+                    <p className="text-xs text-gray-500">Apparaît dans les messages</p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Destinataires */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Destinataires</label>
+                <select
+                  value={broadcastForm.role}
+                  onChange={e => setBroadcastForm(f => ({ ...f, role: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                >
+                  <option value="">Tous les utilisateurs</option>
+                  <option value="SELLER">Vendeurs uniquement</option>
+                  <option value="BUYER">Acheteurs uniquement</option>
+                  <option value="TRANSPORTER">Transporteurs uniquement</option>
+                </select>
+              </div>
+
+              {/* Titre (pour notifications) */}
+              {broadcastForm.type === 'notification' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Titre</label>
+                  <input
+                    type="text"
+                    value={broadcastForm.title}
+                    onChange={e => setBroadcastForm(f => ({ ...f, title: e.target.value }))}
+                    placeholder="Ex: 📢 Annonce importante"
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  />
+                </div>
+              )}
+
+              {/* Message */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {broadcastForm.type === 'notification' ? 'Message' : 'Contenu du message'}
+                </label>
+                <textarea
+                  value={broadcastForm.type === 'notification' ? broadcastForm.message : broadcastForm.content}
+                  onChange={e => setBroadcastForm(f => ({
+                    ...f,
+                    ...(f.type === 'notification' ? { message: e.target.value } : { content: e.target.value }),
+                  }))}
+                  rows={4}
+                  placeholder="Écrivez votre message ici..."
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none"
+                />
+              </div>
+
+              {/* Bouton envoi */}
+              <button
+                onClick={async () => {
+                  setSending(true);
+                  try {
+                    if (broadcastForm.type === 'notification') {
+                      if (!broadcastForm.title || !broadcastForm.message) {
+                        toast.error('Titre et message requis'); setSending(false); return;
+                      }
+                      const res = await adminApi.broadcastNotification(
+                        broadcastForm.title,
+                        broadcastForm.message,
+                        broadcastForm.role || undefined,
+                      );
+                      toast.success(`✅ ${res.data.message}`);
+                    } else {
+                      if (!broadcastForm.content) {
+                        toast.error('Le message est requis'); setSending(false); return;
+                      }
+                      const res = await adminApi.broadcastMessage(
+                        broadcastForm.content,
+                        broadcastForm.role || undefined,
+                      );
+                      toast.success(`✅ ${res.data.message}`);
+                    }
+                    setBroadcastForm({ title: '', message: '', content: '', role: '', type: broadcastForm.type });
+                  } catch (err: any) {
+                    toast.error(err.response?.data?.message || 'Erreur lors de l\'envoi');
+                  } finally {
+                    setSending(false);
+                  }
+                }}
+                disabled={sending}
+                className="w-full py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 disabled:opacity-50 transition"
+              >
+                {sending ? 'Envoi en cours...' : `Envoyer ${broadcastForm.type === 'notification' ? 'la notification' : 'le message'} à ${broadcastForm.role ? (broadcastForm.role === 'SELLER' ? 'tous les vendeurs' : broadcastForm.role === 'BUYER' ? 'tous les acheteurs' : 'tous les transporteurs') : 'tout le monde'}`}
+              </button>
+            </div>
           </div>
         </div>
       )}

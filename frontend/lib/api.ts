@@ -84,6 +84,10 @@ export const adminApi = {
   updateUserRole: (id: string, role: string) => api.put(`/admin/users/${id}/role`, { role }),
   deleteUser: (id: string) => api.delete(`/admin/users/${id}`),
   getCommissions: () => api.get('/admin/commissions'),
+  broadcastNotification: (title: string, message: string, role?: string) =>
+    api.post('/admin/broadcast/notification', { title, message, role }),
+  broadcastMessage: (content: string, role?: string) =>
+    api.post('/admin/broadcast/message', { content, role }),
 };
 
 // Payments

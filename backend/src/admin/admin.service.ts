@@ -182,4 +182,56 @@ export class AdminService {
       date:         e.createdAt,
     }));
   }
+
+  // ─── Broadcast : Notification à tous les utilisateurs ─────────────────────
+  async broadcastNotification(title: string, message: string, role?: string) {
+    const where = role ? { role: role as any } : {};
+    const users = await this.prisma.user.findMany({
+      where,
+      select: { id: true },
+    });
+
+    const notifications = users.map(u => ({
+      userId: u.id,
+      title,
+      message,
+    }));
+
+    const result = await this.prisma.notification.createMany({ data: notifications });
+
+    return {
+      success: true,
+      count: result.count,
+      message: `Notification envoyée à ${result.count} utilisateur(s)`,
+    };
+  }
+
+  // ─── Broadcast : Message privé à tous les utilisateurs ────────────────────
+  async broadcastMessage(adminId: string, content: string, role?: string) {
+    const where: any = { id: { not: adminId } };
+    if (role) where.role = role as any;
+
+    const users = await this.prisma.user.findMany({
+      where,
+      select: { id: true },
+    });
+
+    let count = 0;
+    for (const u of users) {
+      await this.prisma.message.create({
+        data: {
+          senderId: adminId,
+          receiverId: u.id,
+          content,
+        },
+      });
+      count++;
+    }
+
+    return {
+      success: true,
+      count,
+      message: `Message envoyé à ${count} utilisateur(s)`,
+    };
+  }
 }

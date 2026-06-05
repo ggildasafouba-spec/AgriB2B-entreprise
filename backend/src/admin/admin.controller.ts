@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -41,5 +41,25 @@ export class AdminController {
   @ApiOperation({ summary: 'Rapport des commissions' })
   getCommissionReport() {
     return this.adminService.getCommissionReport();
+  }
+
+  @Post('broadcast/notification')
+  @ApiOperation({ summary: 'Envoyer une notification à tous les utilisateurs' })
+  broadcastNotification(
+    @Body('title') title: string,
+    @Body('message') message: string,
+    @Body('role') role?: string,
+  ) {
+    return this.adminService.broadcastNotification(title, message, role);
+  }
+
+  @Post('broadcast/message')
+  @ApiOperation({ summary: 'Envoyer un message privé à tous les utilisateurs' })
+  broadcastMessage(
+    @Body('content') content: string,
+    @Body('role') role?: string,
+    @Request() req,
+  ) {
+    return this.adminService.broadcastMessage(req.user.id, content, role);
   }
 }
