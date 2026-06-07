@@ -172,6 +172,24 @@ export const installmentsApi = {
   markPaid: (paymentId: string) => api.put(`/installments/${paymentId}/pay`),
 };
 
+// Upload (Images)
+export const uploadApi = {
+  uploadImage: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/upload/image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  uploadImages: (files: File[]) => {
+    const formData = new FormData();
+    files.forEach(f => formData.append('files', f));
+    return api.post('/upload/images', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+};
+
 // Delivery (Livraison)
 export const deliveryApi = {
   getServiceOptions: () => api.get('/delivery/service-options'),

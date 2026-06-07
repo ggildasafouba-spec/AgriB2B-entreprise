@@ -1,9 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { productsApi } from '../../../lib/api';
+import { useEffect, useState, useRef } from 'react';
+import { productsApi, uploadApi } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, MapPin, Truck, Package, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, MapPin, Truck, Package, X, ChevronLeft, ChevronRight, Camera } from 'lucide-react';
 
 const TRANSPORT_OPTIONS = [
   { value: 'ROUTE', label: '🚛 Route', color: 'bg-blue-100 text-blue-700' },
@@ -29,6 +29,8 @@ export default function ProductsPage() {
   });
 
   const set = (key: string, val: any) => setForm(prev => ({ ...prev, [key]: val }));
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   const load = () => {
     productsApi.getAll(filterCategory || undefined)
@@ -48,6 +50,27 @@ export default function ProductsPage() {
     if (!form.imageInput.trim()) return;
     set('images', [...form.images, form.imageInput.trim()]);
     set('imageInput', '');
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      for (let i = 0; i < Math.min(files.length, 5); i++) {
+        const res = await uploadApi.uploadImage(files[i]);
+        set('images', [...form.images, res.data.url]);
+        // Update form.images in real-time
+        form.images.push(res.data.url);
+      }
+      toast.success(`${Math.min(files.length, 5)} photo(s) uploadée(s)`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur lors de l\'upload');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const removeImage = (i: number) => {
@@ -209,15 +232,40 @@ export default function ProductsPage() {
             </FormField>
 
             {/* Images */}
-            <FormField label="Images du produit (URLs)" className="md:col-span-2">
+            <FormField label="Photos du produit" className="md:col-span-2">
+              {/* Upload de fichier */}
+              <div className="mb-3">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="flex items-center gap-2 px-4 py-3 bg-green-50 border-2 border-dashed border-green-300 rounded-xl hover:bg-green-100 text-green-700 font-medium text-sm w-full justify-center disabled:opacity-50"
+                >
+                  <Camera className="w-5 h-5" />
+                  {uploading ? 'Upload en cours...' : 'Prendre une photo ou choisir un fichier'}
+                </button>
+                <p className="text-xs text-gray-400 mt-1">JPEG, PNG ou WebP. Max 5 Mo par photo, 5 photos max.</p>
+              </div>
+
+              {/* Ou ajouter via URL */}
               <div className="flex gap-2 mb-2">
                 <input type="url" value={form.imageInput} onChange={e => set('imageInput', e.target.value)}
-                  className="input flex-1" placeholder="https://..." />
+                  className="input flex-1" placeholder="Ou coller une URL d'image..." />
                 <button type="button" onClick={addImage}
                   className="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm">
-                  + Ajouter
+                  + URL
                 </button>
               </div>
+
+              {/* Aperçu des images */}
               {form.images.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {form.images.map((img, i) => (
