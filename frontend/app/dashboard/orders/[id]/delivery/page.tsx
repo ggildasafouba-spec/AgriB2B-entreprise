@@ -1,10 +1,10 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { deliveryApi, transportApi, ordersApi } from '../../../../../lib/api';
+import { deliveryApi, transportApi, ordersApi, uploadApi } from '../../../../../lib/api';
 import { useAuth } from '../../../../../lib/auth-context';
 import toast from 'react-hot-toast';
-import { Truck, Package, MapPin, Clock, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Truck, Package, MapPin, Clock, CheckCircle, AlertCircle, ArrowLeft, Camera } from 'lucide-react';
 import Link from 'next/link';
 
 const STATUS_STEPS = [
@@ -57,6 +57,25 @@ export default function DeliveryTrackingPage() {
     try {
       await deliveryApi.updateStatus(delivery.id, { status });
       toast.success('Statut mis à jour');
+      loadTracking();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const updateStatusWithPhoto = async (status: string, file?: File) => {
+    if (!delivery) return;
+    setUpdating(true);
+    try {
+      let photoUrl: string | undefined;
+      if (file) {
+        const uploadRes = await uploadApi.uploadImage(file);
+        photoUrl = uploadRes.data.url;
+      }
+      await deliveryApi.updateStatus(delivery.id, { status, photoUrl });
+      toast.success(photoUrl ? 'Statut mis à jour avec photo' : 'Statut mis à jour');
       loadTracking();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Erreur');
@@ -175,47 +194,7 @@ export default function DeliveryTrackingPage() {
 
       {/* Actions transporteur */}
       {user?.role === 'TRANSPORTER' && delivery.status !== 'DELIVERED' && delivery.status !== 'FAILED' && (
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">Actions transporteur</h2>
-          <div className="flex flex-wrap gap-2">
-            {delivery.status === 'PENDING' && (
-              <button onClick={() => updateStatus('ACCEPTED')} disabled={updating}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm">
-                ✅ Accepter la livraison
-              </button>
-            )}
-            {delivery.status === 'ACCEPTED' && (
-              <button onClick={() => updateStatus('PICKED_UP')} disabled={updating}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm">
-                📦 Colis récupéré
-              </button>
-            )}
-            {delivery.status === 'PICKED_UP' && (
-              <button onClick={() => updateStatus('IN_TRANSIT')} disabled={updating}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 text-sm">
-                🚛 En transit
-              </button>
-            )}
-            {delivery.status === 'IN_TRANSIT' && (
-              <button onClick={() => updateStatus('ARRIVED_CITY')} disabled={updating}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm">
-                🏙️ Arrivé en ville
-              </button>
-            )}
-            {delivery.status === 'ARRIVED_CITY' && (
-              <button onClick={() => updateStatus('OUT_FOR_DELIVERY')} disabled={updating}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 text-sm">
-                🏃 En cours de livraison
-              </button>
-            )}
-            {delivery.status === 'OUT_FOR_DELIVERY' && (
-              <button onClick={() => updateStatus('DELIVERED')} disabled={updating}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm">
-                🎉 Livré
-              </button>
-            )}
-          </div>
-        </div>
+        <TransporterActions delivery={delivery} updating={updating} updateStatus={updateStatus} updateStatusWithPhoto={updateStatusWithPhoto} />
       )}
 
       {/* Infos destinataire */}
@@ -223,6 +202,94 @@ export default function DeliveryTrackingPage() {
         <p className="font-medium text-gray-800 mb-1">Destinataire</p>
         <p>{delivery.recipientName} — {delivery.recipientPhone}</p>
         <p className="mt-1">{delivery.deliveryAddress}</p>
+      </div>
+    </div>
+  );
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Actions transporteur avec upload photo
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function TransporterActions({ delivery, updating, updateStatus, updateStatusWithPhoto }: any) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+
+  const handlePhotoAndStatus = (status: string) => {
+    setPendingStatus(status);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && pendingStatus) {
+      updateStatusWithPhoto(pendingStatus, file);
+      setPendingStatus(null);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Statuts qui demandent une photo obligatoire
+  const photoRequiredStatuses = ['PICKED_UP', 'DELIVERED'];
+
+  const buttons: { status: string; label: string; color: string; showWhen: string }[] = [
+    { status: 'ACCEPTED', label: '✅ Accepter la livraison', color: 'bg-green-600 hover:bg-green-700', showWhen: 'PENDING' },
+    { status: 'PICKED_UP', label: '📦 Colis récupéré', color: 'bg-blue-600 hover:bg-blue-700', showWhen: 'ACCEPTED' },
+    { status: 'IN_TRANSIT', label: '🚛 En transit', color: 'bg-purple-600 hover:bg-purple-700', showWhen: 'PICKED_UP' },
+    { status: 'ARRIVED_CITY', label: '🏙️ Arrivé en ville', color: 'bg-indigo-600 hover:bg-indigo-700', showWhen: 'IN_TRANSIT' },
+    { status: 'OUT_FOR_DELIVERY', label: '🏃 En cours de livraison', color: 'bg-orange-600 hover:bg-orange-700', showWhen: 'ARRIVED_CITY' },
+    { status: 'DELIVERED', label: '🎉 Livré', color: 'bg-green-600 hover:bg-green-700', showWhen: 'OUT_FOR_DELIVERY' },
+  ];
+
+  const currentButton = buttons.find(b => b.showWhen === delivery.status);
+  if (!currentButton) return null;
+
+  const needsPhoto = photoRequiredStatuses.includes(currentButton.status);
+
+  return (
+    <div className="bg-white rounded-2xl shadow-lg p-6">
+      <h2 className="font-semibold text-gray-900 mb-4">Actions transporteur</h2>
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/jpeg,image/png,image/webp"
+        capture="environment"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
+      <div className="space-y-3">
+        {/* Bouton principal d'action */}
+        <button
+          onClick={() => needsPhoto ? handlePhotoAndStatus(currentButton.status) : updateStatus(currentButton.status)}
+          disabled={updating}
+          className={`w-full py-3 text-white rounded-xl font-semibold disabled:opacity-50 transition text-sm ${currentButton.color}`}
+        >
+          {updating ? 'Mise à jour...' : currentButton.label}
+        </button>
+
+        {/* Info photo */}
+        {needsPhoto && (
+          <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl p-3">
+            <Camera className="w-5 h-5 text-blue-600 flex-shrink-0" />
+            <p className="text-xs text-blue-700">
+              📷 Une photo sera demandée comme preuve ({currentButton.status === 'PICKED_UP' ? 'prise en charge du colis' : 'livraison effectuée'}).
+            </p>
+          </div>
+        )}
+
+        {/* Bouton photo optionnelle (pour les autres statuts) */}
+        {!needsPhoto && (
+          <button
+            onClick={() => handlePhotoAndStatus(currentButton.status)}
+            disabled={updating}
+            className="w-full py-2 border border-gray-300 text-gray-700 rounded-xl text-sm hover:bg-gray-50 flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            <Camera className="w-4 h-4" /> Ajouter une photo (optionnel)
+          </button>
+        )}
       </div>
     </div>
   );
