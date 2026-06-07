@@ -205,7 +205,7 @@ export const deliveryApi = {
     recipientPhone: string;
   }) => api.post('/delivery/create', data),
   getTracking: (orderId: string) => api.get(`/delivery/tracking/${orderId}`),
-  updateStatus: (deliveryId: string, data: { status: string; location?: string; description?: string }) =>
+  updateStatus: (deliveryId: string, data: { status: string; location?: string; description?: string; photoUrl?: string }) =>
     api.put(`/delivery/${deliveryId}/status`, data),
   getMyDeliveries: () => api.get('/delivery/my-deliveries'),
 };

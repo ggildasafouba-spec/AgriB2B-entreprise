@@ -59,7 +59,7 @@ export class DeliveryController {
   @ApiOperation({ summary: 'Mettre à jour le statut de livraison (transporteur)' })
   updateStatus(
     @Param('deliveryId') deliveryId: string,
-    @Body() body: { status: string; location?: string; description?: string },
+    @Body() body: { status: string; location?: string; description?: string; photoUrl?: string },
     @Request() req: any,
   ) {
     return this.deliveryService.updateStatus(deliveryId, req.user.id, body);

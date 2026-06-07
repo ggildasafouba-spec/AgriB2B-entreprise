@@ -153,6 +153,7 @@ export class DeliveryService {
     status: string;
     location?: string;
     description?: string;
+    photoUrl?: string;
   }) {
     const delivery = await this.prisma.delivery.findUnique({ where: { id: deliveryId } });
     if (!delivery) throw new NotFoundException('Livraison introuvable');
@@ -178,24 +179,30 @@ export class DeliveryService {
       data: updateData,
     });
 
-    // Ajouter l'événement de tracking
+    // Ajouter l'événement de tracking (avec photo si fournie)
+    const trackingDescription = data.description || descriptions[data.status] || `Statut mis à jour : ${data.status}`;
+    const fullDescription = data.photoUrl
+      ? `${trackingDescription} [PHOTO:${data.photoUrl}]`
+      : trackingDescription;
+
     await this.prisma.deliveryTracking.create({
       data: {
         deliveryId,
         status: data.status as any,
         location: data.location,
-        description: data.description || descriptions[data.status] || `Statut mis à jour : ${data.status}`,
+        description: fullDescription,
       },
     });
 
     // Notifier l'acheteur
     const order = await this.prisma.order.findUnique({ where: { id: delivery.orderId } });
     if (order) {
+      const photoMsg = data.photoUrl ? ' (📷 photo jointe)' : '';
       await this.prisma.notification.create({
         data: {
           userId: order.buyerId,
           title: `🚚 Mise à jour livraison`,
-          message: descriptions[data.status] || `Statut : ${data.status}`,
+          message: (descriptions[data.status] || `Statut : ${data.status}`) + photoMsg,
         },
       });
     }
