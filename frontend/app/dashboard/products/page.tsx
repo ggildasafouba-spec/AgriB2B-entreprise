@@ -152,6 +152,7 @@ export default function ProductsPage() {
         productionZone: form.productionZone,
         images: form.images,
         transport: form.transport,
+        deliveryOptions: form.deliveryOptions.map(o => JSON.stringify(o)),
         minOrderQty: parseInt(form.minOrderQty),
       });
       toast.success('Produit modifié avec succès');
