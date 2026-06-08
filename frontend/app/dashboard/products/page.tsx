@@ -130,6 +130,10 @@ export default function ProductsPage() {
       images: product.images || [],
       transport: product.transport || [],
       imageInput: '',
+      deliveryOptions: (product.deliveryOptions || []).map((o: string) => { try { return JSON.parse(o); } catch { return null; } }).filter(Boolean),
+      newDeliveryLabel: '',
+      newDeliveryPrice: '',
+      newDeliveryType: 'POINT',
     });
     setShowForm(true);
   };
@@ -153,7 +157,7 @@ export default function ProductsPage() {
       toast.success('Produit modifié avec succès');
       setShowForm(false);
       setEditingProduct(null);
-      setForm({ name: '', description: '', price: '', unit: 'kg', category: '', productionZone: '', initialStock: '', minOrderQty: '1', images: [], transport: [], imageInput: '' });
+      setForm({ name: '', description: '', price: '', unit: 'kg', category: '', productionZone: '', initialStock: '', minOrderQty: '1', images: [], transport: [], imageInput: '', deliveryOptions: [], newDeliveryLabel: '', newDeliveryPrice: '', newDeliveryType: 'POINT' });
       load();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Erreur');
@@ -176,7 +180,7 @@ export default function ProductsPage() {
           </select>
           {(user?.role === 'SELLER' || user?.role === 'ADMIN') && (
             <button
-              onClick={() => { setShowForm(!showForm); setEditingProduct(null); setForm({ name: '', description: '', price: '', unit: 'kg', category: '', productionZone: '', initialStock: '', minOrderQty: '1', images: [], transport: [], imageInput: '' }); }}
+              onClick={() => { setShowForm(!showForm); setEditingProduct(null); setForm({ name: '', description: '', price: '', unit: 'kg', category: '', productionZone: '', initialStock: '', minOrderQty: '1', images: [], transport: [], imageInput: '', deliveryOptions: [], newDeliveryLabel: '', newDeliveryPrice: '', newDeliveryType: 'POINT' }); }}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
               <Plus className="w-4 h-4" /> Nouveau produit
