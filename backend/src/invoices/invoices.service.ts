@@ -34,25 +34,64 @@ export class InvoicesService {
     const isInvoice = isPaid && isConfirmed;
     const docTitle = isInvoice ? 'FACTURE' : 'BON DE COMMANDE';
 
-    // ── Génération PDF avec pdfmake ──────────────────────────────────────────
+    // ── Génération PDF avec pdfmake (mode serveur Node.js) ───────────────────
     const PdfPrinter = require('pdfmake');
-    const fonts = {
-      Roboto: {
-        normal:      Buffer.from(''),
-        bold:        Buffer.from(''),
-        italics:     Buffer.from(''),
-        bolditalics: Buffer.from(''),
-      },
-    };
+    const path = require('path');
 
-    // Utilise les polices système via pdfmake/build/vfs_fonts
-    const pdfMake = require('pdfmake/build/pdfmake');
-    const pdfFonts = require('pdfmake/build/vfs_fonts');
-    pdfMake.vfs = pdfFonts.pdfMake.vfs;
+    // Polices intégrées dans pdfmake
+    const fontsDir = path.join(require.resolve('pdfmake'), '..', 'fonts');
+    let fonts: any;
+    try {
+      fonts = {
+        Roboto: {
+          normal: path.join(fontsDir, 'Roboto-Regular.ttf'),
+          bold: path.join(fontsDir, 'Roboto-Medium.ttf'),
+          italics: path.join(fontsDir, 'Roboto-Italic.ttf'),
+          bolditalics: path.join(fontsDir, 'Roboto-MediumItalic.ttf'),
+        },
+      };
+      // Vérifier si les fichiers existent
+      const fs = require('fs');
+      if (!fs.existsSync(fonts.Roboto.normal)) throw new Error('Font not found');
+    } catch {
+      // Fallback : utiliser les polices du package pdfmake
+      const pdfmakePath = require.resolve('pdfmake/package.json');
+      const pdfmakeDir = path.dirname(pdfmakePath);
+      const fontsPath = path.join(pdfmakeDir, 'build', 'fonts');
+      const altFontsPath = path.join(pdfmakeDir, 'fonts');
+
+      const fs = require('fs');
+      const fontDir = fs.existsSync(fontsPath) ? fontsPath : (fs.existsSync(altFontsPath) ? altFontsPath : null);
+
+      if (fontDir) {
+        fonts = {
+          Roboto: {
+            normal: path.join(fontDir, 'Roboto-Regular.ttf'),
+            bold: path.join(fontDir, 'Roboto-Medium.ttf'),
+            italics: path.join(fontDir, 'Roboto-Italic.ttf'),
+            bolditalics: path.join(fontDir, 'Roboto-MediumItalic.ttf'),
+          },
+        };
+      } else {
+        // Dernier fallback : polices Helvetica (built-in dans pdfmake)
+        fonts = {
+          Helvetica: {
+            normal: 'Helvetica',
+            bold: 'Helvetica-Bold',
+            italics: 'Helvetica-Oblique',
+            bolditalics: 'Helvetica-BoldOblique',
+          },
+        };
+      }
+    }
+
+    const printer = new PdfPrinter(fonts);
+    const defaultFont = fonts.Roboto ? 'Roboto' : 'Helvetica';
 
     const docDefinition: any = {
       pageSize: 'A4',
       pageMargins: [40, 60, 40, 60],
+      defaultStyle: { font: defaultFont },
       styles: {
         header:    { fontSize: 20, bold: true, color: '#166534' },
         subheader: { fontSize: 12, bold: true, color: '#374151' },
@@ -208,8 +247,16 @@ export class InvoicesService {
     };
 
     return new Promise((resolve, reject) => {
-      const pdfDoc = pdfMake.createPdf(docDefinition);
-      pdfDoc.getBuffer((buffer: Buffer) => resolve(buffer));
+      try {
+        const pdfDoc = printer.createPdfKitDocument(docDefinition, { defaultFont });
+        const chunks: Buffer[] = [];
+        pdfDoc.on('data', (chunk: Buffer) => chunks.push(chunk));
+        pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
+        pdfDoc.on('error', (err: any) => reject(err));
+        pdfDoc.end();
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 }
