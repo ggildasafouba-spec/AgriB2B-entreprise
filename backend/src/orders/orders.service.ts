@@ -123,6 +123,96 @@ export class OrdersService {
     return order;
   }
 
+  async updateOrder(id: string, dto: { items?: { productId: string; quantity: number }[]; deliveryAddress?: string; recipientPhone?: string }, userId: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: { items: true, escrow: true },
+    });
+    if (!order) throw new NotFoundException('Commande introuvable');
+    if (order.buyerId !== userId) throw new BadRequestException('Non autorisé');
+    if (order.status !== 'PENDING') {
+      throw new BadRequestException('La commande ne peut être modifiée que si elle est encore en attente (PENDING)');
+    }
+
+    // Si modification des items
+    if (dto.items && dto.items.length > 0) {
+      // Restituer l'ancien stock
+      for (const item of order.items) {
+        await this.prisma.stock.update({
+          where: { productId: item.productId },
+          data: { quantity: { increment: item.quantity } },
+        }).catch(() => {});
+      }
+
+      // Supprimer les anciens items
+      await this.prisma.orderItem.deleteMany({ where: { orderId: id } });
+
+      // Calculer le nouveau total et créer les nouveaux items
+      let totalPrice = 0;
+      const newItems: any[] = [];
+
+      for (const item of dto.items) {
+        const product = await this.prisma.product.findUnique({
+          where: { id: item.productId },
+          include: { stock: true },
+        });
+        if (!product) throw new NotFoundException(`Produit ${item.productId} introuvable`);
+        if (!product.stock || product.stock.quantity < item.quantity) {
+          throw new BadRequestException(`Stock insuffisant pour ${product.name}`);
+        }
+        totalPrice += product.price * item.quantity;
+        newItems.push({ productId: item.productId, quantity: item.quantity, unitPrice: product.price });
+      }
+
+      // Créer les nouveaux items
+      await this.prisma.orderItem.createMany({
+        data: newItems.map(i => ({ orderId: id, ...i })),
+      });
+
+      // Déduire le nouveau stock
+      for (const item of newItems) {
+        await this.prisma.stock.update({
+          where: { productId: item.productId },
+          data: { quantity: { decrement: item.quantity } },
+        });
+      }
+
+      // Mettre à jour le total
+      await this.prisma.order.update({
+        where: { id },
+        data: { totalPrice },
+      });
+
+      // Recalculer l'escrow
+      const seller = await this.prisma.user.findUnique({ where: { id: order.sellerId } });
+      const rate = seller?.accountType === 'COMPANY' ? COMPANY_COMMISSION : INDIVIDUAL_COMMISSION;
+      const commission = Math.round(totalPrice * rate * 100) / 100;
+      const sellerAmount = Math.round((totalPrice - commission) * 100) / 100;
+
+      if (order.escrow) {
+        await this.prisma.escrow.update({
+          where: { orderId: id },
+          data: { amount: totalPrice, commission, sellerAmount },
+        });
+      }
+
+      // Notifier le vendeur
+      await this.prisma.notification.create({
+        data: {
+          userId: order.sellerId,
+          title: '✏️ Commande modifiée',
+          message: `La commande #${id.slice(0, 8)} a été modifiée par l'acheteur. Nouveau montant : ${totalPrice.toLocaleString('fr-FR')} FCFA.`,
+        },
+      });
+    }
+
+    // Retourner la commande mise à jour
+    return this.prisma.order.findUnique({
+      where: { id },
+      include: { items: { include: { product: true } }, escrow: true },
+    });
+  }
+
   async updateStatus(id: string, dto: UpdateOrderStatusDto, userId: string, role: string) {
     const order = await this.prisma.order.findUnique({ where: { id }, include: { escrow: true, seller: { select: { accountType: true } } } });
     if (!order) throw new NotFoundException('Commande introuvable');

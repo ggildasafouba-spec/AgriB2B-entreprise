@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Put, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
-import { CreateOrderDto, UpdateOrderStatusDto } from './dto/order.dto';
+import { CreateOrderDto, UpdateOrderStatusDto, UpdateOrderDto } from './dto/order.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('Orders')
@@ -27,6 +27,12 @@ export class OrdersController {
   @ApiOperation({ summary: 'Détail d\'une commande' })
   findOne(@Param('id') id: string, @Request() req) {
     return this.ordersService.findOne(id, req.user.id, req.user.role);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Modifier une commande (tant qu\'elle est en PENDING)' })
+  updateOrder(@Param('id') id: string, @Body() dto: UpdateOrderDto, @Request() req) {
+    return this.ordersService.updateOrder(id, dto, req.user.id);
   }
 
   @Put(':id/status')
