@@ -50,7 +50,7 @@ export class ProductsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Modifier un produit' })
   update(@Param('id') id: string, @Body() dto: UpdateProductDto, @Request() req) {
-    return this.productsService.update(id, dto, req.user.id);
+    return this.productsService.update(id, dto, req.user.id, req.user.role);
   }
 
   @Delete(':id')

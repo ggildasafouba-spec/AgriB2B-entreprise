@@ -72,10 +72,10 @@ export class ProductsService {
     });
   }
 
-  async update(id: string, dto: UpdateProductDto, userId: string) {
+  async update(id: string, dto: UpdateProductDto, userId: string, userRole?: string) {
     const product = await this.prisma.product.findUnique({ where: { id } });
     if (!product) throw new NotFoundException('Produit introuvable');
-    if (product.sellerId !== userId) throw new ForbiddenException('Non autorisé');
+    if (product.sellerId !== userId && userRole !== 'ADMIN') throw new ForbiddenException('Non autorisé');
     return this.prisma.product.update({ where: { id }, data: dto });
   }
 
