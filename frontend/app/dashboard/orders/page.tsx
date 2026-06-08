@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ordersApi, productsApi, deliveryApi, transportApi, installmentsApi, reviewsApi } from '../../../lib/api';
+import { ordersApi, productsApi, deliveryApi, transportApi, installmentsApi, reviewsApi, invoicesApi } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
 import toast from 'react-hot-toast';
-import { ShoppingCart, Info, Truck, MapPin, CreditCard } from 'lucide-react';
+import { ShoppingCart, Info, Truck, MapPin, CreditCard, Download, Edit2 } from 'lucide-react';
 import Link from 'next/link';
 
 const COMPANY_COMMISSION = 0.10;
@@ -249,10 +249,16 @@ export default function OrdersPage() {
                   {order.status === 'PENDING' && order.buyerId === user?.id && (
                     <div>
                       <p className="text-sm text-amber-700 flex items-center gap-2 mb-2">⏳ En attente de confirmation du vendeur...</p>
-                      <button onClick={() => updateStatus(order.id, 'CANCELLED')}
-                        className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200">
-                        ❌ Annuler ma commande
-                      </button>
+                      <div className="flex gap-2 flex-wrap">
+                        <button onClick={() => updateStatus(order.id, 'CANCELLED')}
+                          className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200">
+                          ❌ Annuler ma commande
+                        </button>
+                        <Link href={`/dashboard/orders/${order.id}/edit`}
+                          className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200 flex items-center gap-1">
+                          <Edit2 className="w-3 h-3" /> Modifier
+                        </Link>
+                      </div>
                     </div>
                   )}
 
@@ -320,6 +326,29 @@ export default function OrdersPage() {
                 {/* Paiement échelonné (entreprises uniquement) */}
                 {user?.role === 'BUYER' && user?.accountType === 'COMPANY' && order.status !== 'CANCELLED' && (
                   <InstallmentButton orderId={order.id} totalPrice={order.totalPrice} onCreated={load} />
+                )}
+
+                {/* Télécharger facture PDF */}
+                {order.status !== 'CANCELLED' && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await invoicesApi.download(order.id);
+                        const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `facture-AGM-${order.id.slice(0, 8).toUpperCase()}.pdf`;
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        toast.success('Facture téléchargée');
+                      } catch {
+                        toast.error('Erreur lors du téléchargement de la facture');
+                      }
+                    }}
+                    className="mt-3 flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition w-fit"
+                  >
+                    <Download className="w-4 h-4" /> Télécharger la facture PDF
+                  </button>
                 )}
               </div>
             );
