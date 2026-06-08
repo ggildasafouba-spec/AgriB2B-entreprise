@@ -32,6 +32,7 @@ export default function OrdersPage() {
   const [payModal, setPayModal] = useState<any>(null);
   const [payForm, setPayForm] = useState({ provider: 'MTN_MOMO', phone: '' });
   const [paying, setPaying] = useState(false);
+  const [selectedDeliveryOption, setSelectedDeliveryOption] = useState<any>(null);
 
   const load = () => {
     Promise.all([ordersApi.getAll(), productsApi.getAll()])
@@ -68,9 +69,13 @@ export default function OrdersPage() {
   const handleOrder = async () => {
     if (cart.length === 0) return toast.error('Panier vide');
     try {
-      await ordersApi.create({ items: cart });
+      await ordersApi.create({
+        items: cart,
+        deliveryOption: selectedDeliveryOption ? JSON.stringify(selectedDeliveryOption) : undefined,
+      });
       toast.success('Commande passée avec succès');
       setCart([]);
+      setSelectedDeliveryOption(null);
       setShowForm(false);
       load();
     } catch (err: any) {
@@ -160,21 +165,64 @@ export default function OrdersPage() {
                 })}
               </div>
 
+              {/* Options de livraison du vendeur */}
+              {(() => {
+                // Récupérer les options de livraison du premier produit du panier
+                const firstProduct = products.find(x => x.id === cart[0]?.productId);
+                const deliveryOpts = (firstProduct?.deliveryOptions || []).map((o: string) => {
+                  try { return JSON.parse(o); } catch { return null; }
+                }).filter(Boolean);
+
+                if (deliveryOpts.length === 0) return null;
+
+                return (
+                  <div className="mb-4">
+                    <h4 className="font-semibold mb-2 text-sm">🚚 Option de livraison</h4>
+                    <div className="space-y-2">
+                      <button type="button"
+                        onClick={() => setSelectedDeliveryOption(null)}
+                        className={`w-full text-left px-3 py-2 rounded-lg border-2 text-sm transition ${
+                          !selectedDeliveryOption ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
+                        }`}>
+                        <span className="font-medium">🚫 Pas de livraison (retrait par mes soins)</span>
+                        <span className="float-right text-green-700 font-bold">Gratuit</span>
+                      </button>
+                      {deliveryOpts.map((opt: any, i: number) => (
+                        <button key={i} type="button"
+                          onClick={() => setSelectedDeliveryOption(opt)}
+                          className={`w-full text-left px-3 py-2 rounded-lg border-2 text-sm transition ${
+                            selectedDeliveryOption?.label === opt.label ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
+                          }`}>
+                          <span className="font-medium">{opt.type === 'DOMICILE' ? '🏠' : '📍'} {opt.label}</span>
+                          <span className="float-right text-green-700 font-bold">{opt.price === 0 ? 'Gratuit' : `+${opt.price.toLocaleString('fr-FR')} FCFA`}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Détail financier */}
                 <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Sous-total</span>
+                  <span className="text-gray-600">Sous-total produits</span>
                   <span className="font-medium">{fmt(cartTotal)}</span>
                 </div>
+                {selectedDeliveryOption && selectedDeliveryOption.price > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Livraison ({selectedDeliveryOption.label})</span>
+                    <span className="font-medium">+{fmt(selectedDeliveryOption.price)}</span>
+                  </div>
+                )}
                 <div className="border-t pt-2 flex justify-between font-bold text-base">
                   <span>Total à payer</span>
-                  <span className="text-green-700">{fmt(cartTotal)}</span>
+                  <span className="text-green-700">{fmt(cartTotal + (selectedDeliveryOption?.price || 0))}</span>
                 </div>
               </div>
 
               <button onClick={handleOrder}
                 className="mt-4 w-full px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700">
-                Confirmer la commande — {fmt(cartTotal)}
+                Confirmer la commande — {fmt(cartTotal + (selectedDeliveryOption?.price || 0))}
               </button>
             </div>
           )}

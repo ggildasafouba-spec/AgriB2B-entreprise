@@ -26,6 +26,8 @@ export default function ProductsPage() {
     name: '', description: '', price: '', unit: 'kg', category: '',
     productionZone: '', initialStock: '', minOrderQty: '1',
     images: [] as string[], transport: [] as string[], imageInput: '',
+    deliveryOptions: [] as { type: string; label: string; price: number }[],
+    newDeliveryLabel: '', newDeliveryPrice: '', newDeliveryType: 'POINT' as string,
   });
 
   const set = (key: string, val: any) => setForm(prev => ({ ...prev, [key]: val }));
@@ -90,12 +92,13 @@ export default function ProductsPage() {
         productionZone: form.productionZone,
         images: form.images,
         transport: form.transport,
+        deliveryOptions: form.deliveryOptions.map(o => JSON.stringify(o)),
         initialStock: parseFloat(form.initialStock),
         minOrderQty: parseInt(form.minOrderQty),
       });
       toast.success('Produit créé');
       setShowForm(false);
-      setForm({ name: '', description: '', price: '', unit: 'kg', category: '', productionZone: '', initialStock: '', minOrderQty: '1', images: [], transport: [], imageInput: '' });
+      setForm({ name: '', description: '', price: '', unit: 'kg', category: '', productionZone: '', initialStock: '', minOrderQty: '1', images: [], transport: [], imageInput: '', deliveryOptions: [], newDeliveryLabel: '', newDeliveryPrice: '', newDeliveryType: 'POINT' });
       load();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Erreur');
@@ -302,6 +305,58 @@ export default function ProductsPage() {
               {form.transport.length === 0 && (
                 <p className="text-xs text-red-400 mt-1">Sélectionnez au moins un moyen de transport</p>
               )}
+            </FormField>
+
+            {/* Options de livraison vendeur */}
+            <FormField label="Options de livraison pour l'acheteur" className="md:col-span-2">
+              <p className="text-xs text-gray-400 mb-3">Définissez comment l'acheteur peut récupérer sa commande</p>
+
+              {/* Liste des options ajoutées */}
+              {form.deliveryOptions.length > 0 && (
+                <div className="space-y-2 mb-3">
+                  {form.deliveryOptions.map((opt, i) => (
+                    <div key={i} className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <span>{opt.type === 'DOMICILE' ? '🏠' : '📍'}</span>
+                        <span className="text-sm font-medium text-gray-800">{opt.label}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-green-700">{opt.price === 0 ? 'Gratuit' : `${opt.price.toLocaleString('fr-FR')} FCFA`}</span>
+                        <button type="button" onClick={() => set('deliveryOptions', form.deliveryOptions.filter((_, idx) => idx !== i))}
+                          className="text-red-500 hover:text-red-700 text-lg">×</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Formulaire d'ajout */}
+              <div className="flex gap-2 items-end flex-wrap">
+                <select value={form.newDeliveryType} onChange={e => set('newDeliveryType', e.target.value)}
+                  className="border rounded-lg px-3 py-2 text-sm">
+                  <option value="DOMICILE">🏠 Livraison domicile</option>
+                  <option value="POINT">📍 Point de rencontre</option>
+                </select>
+                <input type="text" value={form.newDeliveryLabel} onChange={e => set('newDeliveryLabel', e.target.value)}
+                  placeholder={form.newDeliveryType === 'DOMICILE' ? 'Ex: Rayon 0-10km' : 'Ex: Marché central'}
+                  className="border rounded-lg px-3 py-2 text-sm flex-1 min-w-[150px]" />
+                <input type="number" value={form.newDeliveryPrice} onChange={e => set('newDeliveryPrice', e.target.value)}
+                  placeholder="Prix (FCFA)" min="0"
+                  className="border rounded-lg px-3 py-2 text-sm w-28" />
+                <button type="button" onClick={() => {
+                  if (!form.newDeliveryLabel) return toast.error('Indiquez un lieu ou une description');
+                  set('deliveryOptions', [...form.deliveryOptions, {
+                    type: form.newDeliveryType,
+                    label: form.newDeliveryLabel,
+                    price: parseInt(form.newDeliveryPrice) || 0,
+                  }]);
+                  set('newDeliveryLabel', '');
+                  set('newDeliveryPrice', '');
+                }} className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
+                  + Ajouter
+                </button>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">Mettez 0 FCFA pour une option gratuite (ex: retrait sur place)</p>
             </FormField>
           </div>
 
