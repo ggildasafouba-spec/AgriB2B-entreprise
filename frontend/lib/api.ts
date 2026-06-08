@@ -104,10 +104,26 @@ export const paymentsApi = {
 // Invoices
 export const invoicesApi = {
   download: (orderId: string) => {
-    // Pour les PDF, on doit s'assurer que la réponse est en blob
+    // Pour les PDF, on appelle directement le backend sans passer par le proxy Next.js
+    // Le proxy Vercel ne gère pas bien les réponses binaires (blob)
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+
+    if (backendUrl) {
+      // En production : appel direct au backend Railway
+      return axios.get(`${backendUrl}/invoices/${orderId}`, {
+        responseType: 'blob',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/pdf',
+        },
+      });
+    }
+
+    // En local / fallback : via le proxy
     return api.get(`/invoices/${orderId}`, {
       responseType: 'blob',
-      headers: { 'Accept': 'application/pdf' },
+      headers: { Accept: 'application/pdf' },
     });
   },
 };
