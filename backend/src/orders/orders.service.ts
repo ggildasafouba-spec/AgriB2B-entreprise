@@ -32,18 +32,32 @@ export class OrdersService {
 
     const sellerId = enrichedItems[0].product.sellerId;
 
+    // Calculer le coût de livraison si une option est choisie
+    let deliveryCost = 0;
+    if (dto.deliveryOption) {
+      try {
+        const option = JSON.parse(dto.deliveryOption);
+        deliveryCost = option.price || 0;
+        totalPrice += deliveryCost;
+      } catch {}
+    }
+
     // Détermine le taux de commission selon le type de compte du vendeur
     const seller = await this.prisma.user.findUnique({ where: { id: sellerId } });
     const rate = seller?.accountType === 'COMPANY' ? COMPANY_COMMISSION : INDIVIDUAL_COMMISSION;
 
-    const commission   = Math.round(totalPrice * rate * 100) / 100;
-    const sellerAmount = Math.round((totalPrice - commission) * 100) / 100;
+    // Commission uniquement sur le montant des produits (pas la livraison)
+    const productTotal = totalPrice - deliveryCost;
+    const commission   = Math.round(productTotal * rate * 100) / 100;
+    const sellerAmount = Math.round((productTotal - commission) * 100) / 100;
 
     const order = await this.prisma.order.create({
       data: {
         buyerId,
         sellerId,
         totalPrice,
+        deliveryOption: dto.deliveryOption || null,
+        deliveryCostIncluded: deliveryCost,
         items: {
           create: enrichedItems.map(i => ({
             productId: i.product.id,
@@ -91,17 +105,42 @@ export class OrdersService {
       role === 'SELLER' ? { sellerId: userId } :
       { buyerId: userId };
 
-    return this.prisma.order.findMany({
+    const orders = await this.prisma.order.findMany({
       where,
       include: {
         items: { include: { product: { select: { name: true, unit: true } } } },
-        buyer:  { select: { name: true, email: true } },
-        seller: { select: { name: true, email: true } },
+        buyer:  { select: { id: true, name: true, email: true, phone: true, region: true } },
+        seller: { select: { id: true, name: true, email: true, phone: true, region: true } },
         escrow: true,
         payment: true,
         delivery: { include: { trackingEvents: { orderBy: { createdAt: 'desc' }, take: 1 } } },
       },
       orderBy: { createdAt: 'desc' },
+    });
+
+    // Masquer les coordonnées tant que la commande n'est pas payée + confirmée
+    return orders.map(order => {
+      const isPaidAndConfirmed = order.payment?.status === 'SUCCESS' && order.status !== 'PENDING';
+      const isAdmin = role === 'ADMIN';
+
+      if (!isPaidAndConfirmed && !isAdmin) {
+        // Masquer les détails de l'autre partie
+        if (order.buyerId === userId) {
+          // L'acheteur ne voit que le nom et la région du vendeur
+          return {
+            ...order,
+            seller: { id: order.seller.id, name: order.seller.name, region: order.seller.region, email: null, phone: null },
+          };
+        } else if (order.sellerId === userId) {
+          // Le vendeur ne voit que la région de l'acheteur
+          return {
+            ...order,
+            buyer: { id: order.buyer.id, name: null, region: order.buyer.region, email: null, phone: null },
+          };
+        }
+      }
+
+      return order;
     });
   }
 

@@ -63,6 +63,7 @@ model Product {
   productionZone  String?
   images          String[]
   transport       String[]
+  deliveryOptions String[]    // JSON-encoded delivery options set by seller
   sellerId        String
   seller          User        @relation(fields: [sellerId], references: [id])
   stock           Stock?
@@ -90,6 +91,8 @@ model Order {
   seller          User        @relation("SellerOrders", fields: [sellerId], references: [id])
   status          OrderStatus @default(PENDING)
   totalPrice      Float
+  deliveryOption  String?     // JSON: option de livraison choisie par l'acheteur
+  deliveryCostIncluded Float? @default(0) // Frais de livraison inclus dans totalPrice
   items           OrderItem[]
   escrow          Escrow?
   payment         Payment?

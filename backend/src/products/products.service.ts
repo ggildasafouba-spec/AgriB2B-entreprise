@@ -63,6 +63,7 @@ export class ProductsService {
         productionZone: dto.productionZone,
         images: dto.images || [],
         transport: dto.transport || [],
+        deliveryOptions: dto.deliveryOptions || [],
         minOrderQty,
         sellerId,
         stock: { create: { quantity: dto.initialStock } },

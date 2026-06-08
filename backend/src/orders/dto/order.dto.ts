@@ -19,6 +19,11 @@ export class CreateOrderDto {
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
   items: OrderItemDto[];
+
+  @ApiProperty({ required: false, description: 'Option de livraison choisie (JSON string)' })
+  @IsOptional()
+  @IsString()
+  deliveryOption?: string;
 }
 
 export class UpdateOrderStatusDto {

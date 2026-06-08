@@ -46,6 +46,16 @@ export class CreateProductDto {
   @IsArray()
   transport: string[];
 
+  @ApiProperty({
+    example: ['{"type":"DOMICILE","label":"Livraison à domicile (0-10km)","price":500}', '{"type":"POINT","label":"Marché central","price":0}'],
+    description: 'Options de livraison définies par le vendeur (JSON strings)',
+    type: [String],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  deliveryOptions?: string[];
+
   @ApiProperty({ example: 100 })
   @IsNumber()
   @Min(0)
@@ -67,5 +77,6 @@ export class UpdateProductDto {
   @IsOptional() @IsString() productionZone?: string;
   @IsOptional() @IsArray() images?: string[];
   @IsOptional() @IsArray() transport?: string[];
+  @IsOptional() @IsArray() deliveryOptions?: string[];
   @IsOptional() @IsInt() @Min(1) minOrderQty?: number;
 }
