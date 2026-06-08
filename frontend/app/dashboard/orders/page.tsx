@@ -300,7 +300,24 @@ export default function OrdersPage() {
 
                   {/* Annulée */}
                   {order.status === 'CANCELLED' && (
-                    <p className="text-sm text-red-600 flex items-center gap-2">❌ Commande annulée.</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-red-600 flex items-center gap-2">❌ Commande annulée.</p>
+                      <button
+                        onClick={async () => {
+                          if (!confirm('Supprimer définitivement cette commande ?')) return;
+                          try {
+                            await ordersApi.delete(order.id);
+                            toast.success('Commande supprimée');
+                            load();
+                          } catch (err: any) {
+                            toast.error(err.response?.data?.message || 'Erreur');
+                          }
+                        }}
+                        className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs hover:bg-red-200"
+                      >
+                        🗑️ Supprimer
+                      </button>
+                    </div>
                   )}
                 </div>
 

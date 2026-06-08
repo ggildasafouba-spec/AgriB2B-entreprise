@@ -355,4 +355,28 @@ export class OrdersService {
 
     return updated;
   }
+
+  async deleteOrder(id: string, userId: string, role: string) {
+    const order = await this.prisma.order.findUnique({ where: { id } });
+    if (!order) throw new NotFoundException('Commande introuvable');
+
+    // Seul l'acheteur, le vendeur, ou l'admin peut supprimer
+    if (role !== 'ADMIN' && order.buyerId !== userId && order.sellerId !== userId) {
+      throw new BadRequestException('Non autorisé');
+    }
+
+    // On ne peut supprimer que les commandes annulées
+    if (order.status !== 'CANCELLED') {
+      throw new BadRequestException('Seules les commandes annulées peuvent être supprimées');
+    }
+
+    // Supprimer dans l'ordre (contraintes FK)
+    await this.prisma.escrow.deleteMany({ where: { orderId: id } });
+    await this.prisma.payment.deleteMany({ where: { orderId: id } });
+    await this.prisma.message.deleteMany({ where: { orderId: id } });
+    await this.prisma.orderItem.deleteMany({ where: { orderId: id } });
+    await this.prisma.order.delete({ where: { id } });
+
+    return { message: 'Commande supprimée' };
+  }
 }

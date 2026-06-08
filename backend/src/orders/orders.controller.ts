@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto, UpdateOrderStatusDto, UpdateOrderDto } from './dto/order.dto';
@@ -39,5 +39,11 @@ export class OrdersController {
   @ApiOperation({ summary: 'Mettre à jour le statut d\'une commande' })
   updateStatus(@Param('id') id: string, @Body() dto: UpdateOrderStatusDto, @Request() req) {
     return this.ordersService.updateStatus(id, dto, req.user.id, req.user.role);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Supprimer une commande annulée' })
+  deleteOrder(@Param('id') id: string, @Request() req) {
+    return this.ordersService.deleteOrder(id, req.user.id, req.user.role);
   }
 }
