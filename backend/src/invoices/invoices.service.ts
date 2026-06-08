@@ -19,7 +19,11 @@ export class InvoicesService {
 
     if (!order) throw new NotFoundException('Commande introuvable');
     if (order.buyerId !== userId && order.sellerId !== userId) {
-      throw new NotFoundException('Commande introuvable');
+      // Vérifier si c'est un admin
+      const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+      if (user?.role !== 'ADMIN') {
+        throw new NotFoundException('Commande introuvable');
+      }
     }
 
     const defaultRate = order.seller?.accountType === 'COMPANY' ? 0.05 : 0.10;
