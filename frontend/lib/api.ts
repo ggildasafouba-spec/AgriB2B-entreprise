@@ -103,8 +103,13 @@ export const paymentsApi = {
 
 // Invoices
 export const invoicesApi = {
-  download: (orderId: string) =>
-    api.get(`/invoices/${orderId}`, { responseType: 'blob' }),
+  download: (orderId: string) => {
+    // Pour les PDF, on doit s'assurer que la réponse est en blob
+    return api.get(`/invoices/${orderId}`, {
+      responseType: 'blob',
+      headers: { 'Accept': 'application/pdf' },
+    });
+  },
 };
 
 // Advance Orders

@@ -361,8 +361,13 @@ export default function OrdersPage() {
                           a.click();
                           window.URL.revokeObjectURL(url);
                           toast.success(isInvoice ? 'Facture téléchargée' : 'Bon de commande téléchargé');
-                        } catch {
-                          toast.error('Erreur lors du téléchargement');
+                        } catch (err: any) {
+                          if (err.response?.data instanceof Blob) {
+                            const text = await err.response.data.text();
+                            try { const j = JSON.parse(text); toast.error(j.message || 'Erreur PDF'); } catch { toast.error('Erreur lors du téléchargement'); }
+                          } else {
+                            toast.error(err.response?.data?.message || 'Erreur lors du téléchargement');
+                          }
                         }
                       }}
                       className="mt-3 flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition w-fit"
