@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { ordersApi, productsApi, deliveryApi, transportApi, installmentsApi, reviewsApi, invoicesApi } from '../../../lib/api';
+import { ordersApi, productsApi, deliveryApi, transportApi, installmentsApi, reviewsApi, invoicesApi, paymentsApi } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth-context';
 import toast from 'react-hot-toast';
-import { ShoppingCart, Info, Truck, MapPin, CreditCard, Download, Edit2 } from 'lucide-react';
+import { ShoppingCart, Info, Truck, MapPin, CreditCard, Download, Edit2, Smartphone } from 'lucide-react';
 import Link from 'next/link';
 
 const COMPANY_COMMISSION = 0.10;
@@ -29,6 +29,9 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [cart, setCart]       = useState<{ productId: string; quantity: number }[]>([]);
+  const [payModal, setPayModal] = useState<any>(null);
+  const [payForm, setPayForm] = useState({ provider: 'MTN_MOMO', phone: '' });
+  const [paying, setPaying] = useState(false);
 
   const load = () => {
     Promise.all([ordersApi.getAll(), productsApi.getAll()])
@@ -82,6 +85,27 @@ export default function OrdersPage() {
       load();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Erreur');
+    }
+  };
+
+  const handlePay = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!payModal) return;
+    setPaying(true);
+    try {
+      const res = await paymentsApi.initiate(payModal.id, payForm.provider, payForm.phone);
+      if (res.data.paymentUrl) {
+        toast.success('Redirection vers la page de paiement...');
+        window.location.href = res.data.paymentUrl;
+        return;
+      }
+      toast.success(`✅ ${res.data.message}`);
+      setPayModal(null);
+      load();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur de paiement');
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -273,7 +297,20 @@ export default function OrdersPage() {
                     </div>
                   )}
                   {order.status === 'CONFIRMED' && order.buyerId === user?.id && (
-                    <p className="text-sm text-blue-700 flex items-center gap-2">✅ Commande confirmée par le vendeur. Préparation en cours...</p>
+                    <div>
+                      <p className="text-sm text-blue-700 flex items-center gap-2 mb-2">✅ Commande confirmée par le vendeur.</p>
+                      {(!order.payment || order.payment.status !== 'SUCCESS') && (
+                        <button
+                          onClick={() => { setPayModal(order); setPayForm({ provider: 'MTN_MOMO', phone: (user as any)?.phone || '' }); }}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+                        >
+                          <Smartphone className="w-4 h-4" /> Payer la commande
+                        </button>
+                      )}
+                      {order.payment?.status === 'SUCCESS' && (
+                        <p className="text-sm text-green-600 font-medium">✅ Paiement effectué</p>
+                      )}
+                    </div>
                   )}
 
                   {/* Étape 3 : Acheteur confirme réception */}
@@ -386,6 +423,61 @@ export default function OrdersPage() {
               <p>Aucune commande</p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Modal paiement ── */}
+      {payModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-1">💳 Paiement</h3>
+            <p className="text-gray-500 text-sm mb-5">
+              Commande #{payModal.id.slice(0, 8).toUpperCase()} — <span className="font-bold text-green-700">{fmt(payModal.totalPrice)}</span>
+            </p>
+            <form onSubmit={handlePay} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Moyen de paiement</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: 'MTN_MOMO', label: 'MTN MoMo', logo: '🟡' },
+                    { value: 'ORANGE_MONEY', label: 'Orange Money', logo: '🟠' },
+                    { value: 'MANUAL', label: 'Virement', logo: '🏦' },
+                  ].map(p => (
+                    <button key={p.value} type="button"
+                      onClick={() => setPayForm(f => ({ ...f, provider: p.value }))}
+                      className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition ${
+                        payForm.provider === p.value ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
+                      }`}>
+                      <span className="text-2xl">{p.logo}</span>
+                      <span className="text-xs font-medium text-center">{p.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {payForm.provider === 'MANUAL' ? 'Référence de virement' : 'Numéro Mobile Money'}
+                </label>
+                <input type="text" value={payForm.phone}
+                  onChange={e => setPayForm(f => ({ ...f, phone: e.target.value }))}
+                  placeholder={payForm.provider === 'MANUAL' ? 'Référence ou numéro de reçu' : '+237 6XX XXX XXX'}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+                  required />
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 text-sm flex justify-between">
+                <span className="text-gray-500">Montant à payer</span>
+                <span className="font-bold text-green-700">{fmt(payModal.totalPrice)}</span>
+              </div>
+              <div className="flex gap-3">
+                <button type="submit" disabled={paying}
+                  className="flex-1 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 disabled:opacity-50">
+                  {paying ? 'Traitement...' : 'Confirmer le paiement'}
+                </button>
+                <button type="button" onClick={() => setPayModal(null)}
+                  className="px-4 py-3 border rounded-xl hover:bg-gray-50">Annuler</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
