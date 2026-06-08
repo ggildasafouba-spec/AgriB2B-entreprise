@@ -71,9 +71,9 @@ export class InvoicesService {
           columns: [
             {
               stack: [
-                { text: 'AgroMarket Enterprise', style: 'header' },
+                { text: 'AgriB2B', style: 'header' },
                 { text: 'Plateforme Agricole B2B', style: 'label', margin: [0, 2, 0, 0] },
-                { text: 'contact@agromarket.com', style: 'label' },
+                { text: 'contact.mboamarket@gmail.com', style: 'label' },
               ],
             },
             {
@@ -203,7 +203,7 @@ export class InvoicesService {
         // ── Pied de page ──
         { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 1, lineColor: '#e5e7eb' }], margin: [0, 30, 0, 10] },
         {
-          text: `AgroMarket Enterprise — Plateforme Agricole B2B — contact@agromarket.com\nDocument généré automatiquement — Commission plateforme ${Math.round(defaultRate * 100)}% prélevée sur cette transaction`,
+          text: `AgriB2B — Plateforme Agricole B2B — contact.mboamarket@gmail.com\nDocument généré automatiquement — Commission plateforme ${Math.round(defaultRate * 100)}% prélevée sur cette transaction`,
           fontSize: 8,
           color: '#9ca3af',
           alignment: 'center',
