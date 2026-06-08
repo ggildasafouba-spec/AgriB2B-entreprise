@@ -28,6 +28,12 @@ export class InvoicesService {
     const invoiceNum   = `AGM-${order.id.slice(0, 8).toUpperCase()}-${new Date(order.createdAt).getFullYear()}`;
     const dateStr      = new Date(order.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
 
+    // Déterminer si c'est une facture ou un bon de commande
+    const isPaid = order.payment?.status === 'SUCCESS';
+    const isConfirmed = order.status !== 'PENDING';
+    const isInvoice = isPaid && isConfirmed;
+    const docTitle = isInvoice ? 'FACTURE' : 'BON DE COMMANDE';
+
     // ── Génération PDF avec pdfmake ──────────────────────────────────────────
     const PdfPrinter = require('pdfmake');
     const fonts = {
@@ -68,7 +74,7 @@ export class InvoicesService {
             },
             {
               stack: [
-                { text: 'FACTURE', fontSize: 24, bold: true, color: '#16a34a', alignment: 'right' },
+                { text: docTitle, fontSize: 24, bold: true, color: '#16a34a', alignment: 'right' },
                 { text: invoiceNum, fontSize: 11, color: '#374151', alignment: 'right', margin: [0, 4, 0, 0] },
                 { text: `Date : ${dateStr}`, style: 'label', alignment: 'right' },
               ],

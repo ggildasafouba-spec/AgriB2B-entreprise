@@ -345,28 +345,33 @@ export default function OrdersPage() {
                   <InstallmentButton orderId={order.id} totalPrice={order.totalPrice} onCreated={load} />
                 )}
 
-                {/* Télécharger facture PDF */}
-                {order.status !== 'CANCELLED' && (
-                  <button
-                    onClick={async () => {
-                      try {
-                        const res = await invoicesApi.download(order.id);
-                        const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `facture-AGM-${order.id.slice(0, 8).toUpperCase()}.pdf`;
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                        toast.success('Facture téléchargée');
-                      } catch {
-                        toast.error('Erreur lors du téléchargement de la facture');
-                      }
-                    }}
-                    className="mt-3 flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition w-fit"
-                  >
-                    <Download className="w-4 h-4" /> Télécharger la facture PDF
-                  </button>
-                )}
+                {/* Télécharger facture ou bon de commande */}
+                {order.status !== 'CANCELLED' && (() => {
+                  const isInvoice = order.payment?.status === 'SUCCESS' && order.status !== 'PENDING';
+                  return (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await invoicesApi.download(order.id);
+                          const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+                          const a = document.createElement('a');
+                          a.href = url;
+                          const prefix = isInvoice ? 'facture' : 'bon-commande';
+                          a.download = `${prefix}-AGM-${order.id.slice(0, 8).toUpperCase()}.pdf`;
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                          toast.success(isInvoice ? 'Facture téléchargée' : 'Bon de commande téléchargé');
+                        } catch {
+                          toast.error('Erreur lors du téléchargement');
+                        }
+                      }}
+                      className="mt-3 flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition w-fit"
+                    >
+                      <Download className="w-4 h-4" />
+                      {isInvoice ? 'Télécharger la facture PDF' : 'Télécharger le bon de commande'}
+                    </button>
+                  );
+                })()}
               </div>
             );
           })}
