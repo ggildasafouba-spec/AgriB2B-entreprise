@@ -92,7 +92,7 @@ export class DeliveryService {
     recipientName: string;
     recipientPhone: string;
   }) {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    const order = await this.prisma.order.findUnique({ where: { id: orderId }, select: { id: true, totalPrice: true, buyerId: true } });
     if (!order) throw new NotFoundException('Commande introuvable');
 
     const existing = await this.prisma.delivery.findUnique({ where: { orderId } });
@@ -134,12 +134,41 @@ export class DeliveryService {
       include: { trackingEvents: true },
     });
 
+    // ─── Additionner les frais de livraison au totalPrice de la commande ─────
+    // L'acheteur paie un seul montant : produits + livraison
+    const newTotalPrice = Math.round((order.totalPrice + cost.totalCost) * 100) / 100;
+    await this.prisma.order.update({
+      where: { id: orderId },
+      data: { totalPrice: newTotalPrice },
+    });
+
+    // Mettre à jour l'escrow si existant (recalculer avec le nouveau total)
+    const escrow = await this.prisma.escrow.findUnique({ where: { orderId } });
+    if (escrow) {
+      // La commission plateforme ne s'applique qu'aux produits (pas à la livraison)
+      // L'escrow garde le montant produits + commission produits inchangés
+      // Les frais de livraison sont gérés séparément (payout au transporteur)
+      await this.prisma.escrow.update({
+        where: { orderId },
+        data: { amount: newTotalPrice },
+      });
+    }
+
+    // Notifier l'acheteur
+    await this.prisma.notification.create({
+      data: {
+        userId: order.buyerId,
+        title: '🚛 Livraison ajoutée à votre commande',
+        message: `Frais de livraison : ${cost.totalCost.toLocaleString('fr-FR')} FCFA ajoutés. Nouveau total à payer : ${newTotalPrice.toLocaleString('fr-FR')} FCFA.`,
+      },
+    });
+
     // Notifier le transporteur
     await this.prisma.notification.create({
       data: {
         userId: cost.transporterId,
         title: '📦 Nouvelle livraison à prendre en charge',
-        message: `Livraison ${cost.origin} → ${cost.destination} (${data.weight}kg, ${data.serviceType}). Montant : ${cost.transporterAmount} FCFA.`,
+        message: `Livraison ${cost.origin} → ${cost.destination} (${data.weight}kg, ${data.serviceType}). Montant : ${cost.transporterAmount.toLocaleString('fr-FR')} FCFA.`,
       },
     });
 
