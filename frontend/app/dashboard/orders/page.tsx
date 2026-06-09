@@ -305,17 +305,29 @@ export default function OrdersPage() {
                   {/* Étape 1 : Vendeur accepte ou refuse */}
                   {order.status === 'PENDING' && order.sellerId === user?.id && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">⏳ En attente de votre validation :</p>
-                      <div className="flex gap-2">
-                        <button onClick={() => updateStatus(order.id, 'CONFIRMED')}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 font-medium">
-                          ✅ Accepter la commande
-                        </button>
-                        <button onClick={() => updateStatus(order.id, 'CANCELLED')}
-                          className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200">
-                          ❌ Refuser
-                        </button>
-                      </div>
+                      {order.payment?.status === 'SUCCESS' ? (
+                        <>
+                          <p className="text-sm font-medium text-green-700 mb-2">✅ Commande payée ! Préparez le colis :</p>
+                          <div className="flex gap-2">
+                            <button onClick={() => updateStatus(order.id, 'CONFIRMED')}
+                              className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 font-medium">
+                              ✅ Accepter et préparer
+                            </button>
+                            <button onClick={() => updateStatus(order.id, 'CANCELLED')}
+                              className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200">
+                              ❌ Refuser
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm text-amber-700 mb-2">⏳ En attente du paiement de l'acheteur...</p>
+                          <button onClick={() => updateStatus(order.id, 'CANCELLED')}
+                            className="px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm hover:bg-red-200">
+                            ❌ Refuser la commande
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
                   {order.status === 'PENDING' && order.buyerId === user?.id && (

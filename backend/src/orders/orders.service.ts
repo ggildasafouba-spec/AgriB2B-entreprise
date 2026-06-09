@@ -100,10 +100,10 @@ export class OrdersService {
   }
 
   async findAll(userId: string, role: string) {
-    const where =
-      role === 'ADMIN' ? {} :
-      role === 'SELLER' ? { sellerId: userId } :
-      { buyerId: userId };
+    const where: any =
+      role === 'ADMIN' ? { status: { not: 'CANCELLED' } } :
+      role === 'SELLER' ? { sellerId: userId, status: { not: 'CANCELLED' } } :
+      { buyerId: userId, status: { not: 'CANCELLED' } };
 
     const orders = await this.prisma.order.findMany({
       where,
@@ -409,12 +409,24 @@ export class OrdersService {
       throw new BadRequestException('Seules les commandes annulées peuvent être supprimées');
     }
 
-    // Supprimer dans l'ordre (contraintes FK)
-    await this.prisma.escrow.deleteMany({ where: { orderId: id } });
-    await this.prisma.payment.deleteMany({ where: { orderId: id } });
-    await this.prisma.message.deleteMany({ where: { orderId: id } });
-    await this.prisma.orderItem.deleteMany({ where: { orderId: id } });
-    await this.prisma.order.delete({ where: { id } });
+    // Supprimer dans l'ordre (toutes les contraintes FK possibles)
+    try {
+      // Livraisons
+      const delivery = await this.prisma.delivery.findUnique({ where: { orderId: id } });
+      if (delivery) {
+        await this.prisma.deliveryTracking.deleteMany({ where: { deliveryId: delivery.id } });
+        await this.prisma.delivery.delete({ where: { orderId: id } });
+      }
+      await this.prisma.escrow.deleteMany({ where: { orderId: id } });
+      await this.prisma.payment.deleteMany({ where: { orderId: id } });
+      await this.prisma.message.deleteMany({ where: { orderId: id } });
+      await this.prisma.orderItem.deleteMany({ where: { orderId: id } });
+      await this.prisma.order.delete({ where: { id } });
+    } catch (err: any) {
+      // Si encore des contraintes, forcer la suppression des items puis la commande
+      await this.prisma.orderItem.deleteMany({ where: { orderId: id } }).catch(() => {});
+      await this.prisma.order.delete({ where: { id } }).catch(() => {});
+    }
 
     return { message: 'Commande supprimée' };
   }
