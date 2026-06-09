@@ -439,11 +439,7 @@ export default function OrdersPage() {
                     </Link>
                   ) : (
                     order.buyerId === user?.id && (
-                      <Link href={`/dashboard/orders/${order.id}/delivery`}
-                        className="mt-3 flex items-center gap-2 px-3 py-2 bg-purple-50 text-purple-700 rounded-lg text-sm hover:bg-purple-100 transition w-fit">
-                        <Truck className="w-4 h-4" />
-                        Commander une livraison
-                      </Link>
+                      <DeliveryOptionsInline orderId={order.id} onDeliveryCreated={load} />
                     )
                   )
                 )}
@@ -548,6 +544,105 @@ export default function OrdersPage() {
                   className="px-4 py-3 border rounded-xl hover:bg-gray-50">Annuler</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Composant options livraison inline ────────────────────────────────────────
+const DELIVERY_TARIFFS = [
+  { type: 'DOMICILE', label: '🏠 Livraison à domicile (moins de 10 km)', price: 500 },
+  { type: 'DOMICILE', label: '🏠 Livraison à domicile (10-15 km)', price: 1000 },
+  { type: 'DOMICILE', label: '🏠 Livraison à domicile (plus de 15 km)', price: 2000 },
+  { type: 'POINT', label: '📍 Point relais / Point de rencontre', price: 300 },
+];
+
+function DeliveryOptionsInline({ orderId, onDeliveryCreated }: { orderId: string; onDeliveryCreated: () => void }) {
+  const [showOptions, setShowOptions] = useState(false);
+  const [selected, setSelected] = useState<any>(null);
+  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!selected) return toast.error('Choisissez une option de livraison');
+    if (!address) return toast.error('Indiquez l\'adresse de livraison');
+    if (!phone) return toast.error('Indiquez le téléphone du destinataire');
+    setSubmitting(true);
+    try {
+      // Appeler l'API pour créer une livraison simple (sans transporteur externe)
+      await deliveryApi.create({
+        orderId,
+        transportRateId: '', // Pas de transporteur externe
+        weight: 1,
+        serviceType: 'STANDARD',
+        deliveryAddress: address,
+        recipientName: '',
+        recipientPhone: phone,
+      });
+      toast.success(`Livraison commandée — ${selected.price.toLocaleString('fr-FR')} FCFA ajoutés au total`);
+      setShowOptions(false);
+      onDeliveryCreated();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!showOptions) {
+    return (
+      <div className="mt-3 flex gap-2 flex-wrap">
+        <button onClick={() => setShowOptions(true)}
+          className="flex items-center gap-2 px-3 py-2 bg-purple-50 text-purple-700 rounded-lg text-sm hover:bg-purple-100 transition">
+          <Truck className="w-4 h-4" /> Options de livraison
+        </button>
+        <Link href={`/dashboard/orders/${orderId}/delivery`}
+          className="flex items-center gap-2 px-3 py-2 bg-gray-50 text-gray-600 rounded-lg text-sm hover:bg-gray-100 transition">
+          <MapPin className="w-4 h-4" /> Transporteur longue distance
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 bg-purple-50 border border-purple-200 rounded-xl p-4">
+      <h4 className="font-semibold text-sm text-purple-800 mb-3">🚚 Choisissez votre mode de livraison</h4>
+      <div className="space-y-2 mb-4">
+        {DELIVERY_TARIFFS.map((opt, i) => (
+          <button key={i} type="button" onClick={() => setSelected(opt)}
+            className={`w-full text-left px-3 py-2 rounded-lg border-2 text-sm transition ${
+              selected === opt ? 'border-purple-500 bg-purple-100' : 'border-gray-200 bg-white hover:border-gray-300'
+            }`}>
+            <span className="font-medium">{opt.label}</span>
+            <span className="float-right font-bold text-green-700">{opt.price.toLocaleString('fr-FR')} FCFA</span>
+          </button>
+        ))}
+      </div>
+
+      {selected && (
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-medium text-gray-600">Adresse de livraison</label>
+            <input type="text" value={address} onChange={e => setAddress(e.target.value)}
+              placeholder="Ex: Quartier Bastos, après le carrefour..."
+              className="w-full border rounded-lg px-3 py-2 text-sm mt-1" />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600">Téléphone destinataire</label>
+            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+              placeholder="+237 6XX XXX XXX"
+              className="w-full border rounded-lg px-3 py-2 text-sm mt-1" />
+          </div>
+          <div className="flex gap-2">
+            <button onClick={handleSubmit} disabled={submitting}
+              className="flex-1 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50">
+              {submitting ? 'Commande...' : `Confirmer — +${selected.price.toLocaleString('fr-FR')} FCFA`}
+            </button>
+            <button onClick={() => setShowOptions(false)}
+              className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Annuler</button>
           </div>
         </div>
       )}
