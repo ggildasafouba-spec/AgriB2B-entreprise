@@ -572,17 +572,14 @@ function DeliveryOptionsInline({ orderId, onDeliveryCreated }: { orderId: string
     if (!phone) return toast.error('Indiquez le téléphone du destinataire');
     setSubmitting(true);
     try {
-      // Appeler l'API pour créer une livraison simple (sans transporteur externe)
-      await deliveryApi.create({
+      await deliveryApi.createSimple({
         orderId,
-        transportRateId: '', // Pas de transporteur externe
-        weight: 1,
-        serviceType: 'STANDARD',
         deliveryAddress: address,
-        recipientName: '',
         recipientPhone: phone,
+        deliveryCost: selected.price,
+        label: selected.label,
       });
-      toast.success(`Livraison commandée — ${selected.price.toLocaleString('fr-FR')} FCFA ajoutés au total`);
+      toast.success(`Livraison commandée — +${selected.price.toLocaleString('fr-FR')} FCFA`);
       setShowOptions(false);
       onDeliveryCreated();
     } catch (err: any) {

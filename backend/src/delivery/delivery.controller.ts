@@ -44,6 +44,20 @@ export class DeliveryController {
     return this.deliveryService.createDelivery(body.orderId, body);
   }
 
+  @Post('create-simple')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Créer une livraison simple (sans transporteur externe)' })
+  createSimpleDelivery(@Body() body: {
+    orderId: string;
+    deliveryAddress: string;
+    recipientPhone: string;
+    deliveryCost: number;
+    label: string;
+  }) {
+    return this.deliveryService.createSimpleDelivery(body);
+  }
+
   @Get('tracking/:orderId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

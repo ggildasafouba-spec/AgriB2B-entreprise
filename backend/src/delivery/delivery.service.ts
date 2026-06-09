@@ -82,6 +82,76 @@ export class DeliveryService {
   }
 
   /**
+   * Crée une livraison simple (sans transporteur externe)
+   * Utilisé pour les livraisons à domicile / points relais avec tarif fixe
+   */
+  async createSimpleDelivery(data: {
+    orderId: string;
+    deliveryAddress: string;
+    recipientPhone: string;
+    deliveryCost: number;
+    label: string;
+  }) {
+    const order = await this.prisma.order.findUnique({ where: { id: data.orderId }, select: { id: true, totalPrice: true, buyerId: true, sellerId: true } });
+    if (!order) throw new NotFoundException('Commande introuvable');
+
+    const existing = await this.prisma.delivery.findUnique({ where: { orderId: data.orderId } });
+    if (existing) throw new BadRequestException('Une livraison existe déjà pour cette commande');
+
+    // Créer la livraison (le vendeur fait la livraison lui-même)
+    const delivery = await this.prisma.delivery.create({
+      data: {
+        orderId: data.orderId,
+        transporterId: order.sellerId, // Le vendeur assure la livraison
+        origin: 'Vendeur',
+        destination: data.deliveryAddress,
+        serviceType: 'STANDARD',
+        deliveryCost: data.deliveryCost,
+        commission: 0, // Pas de commission transport sur livraison directe
+        transporterAmount: data.deliveryCost,
+        deliveryAddress: data.deliveryAddress,
+        recipientName: '',
+        recipientPhone: data.recipientPhone,
+        status: 'ACCEPTED',
+        trackingEvents: {
+          create: {
+            status: 'ACCEPTED',
+            description: `Livraison ${data.label} — ${data.deliveryAddress}`,
+          },
+        },
+      },
+      include: { trackingEvents: true },
+    });
+
+    // Additionner les frais de livraison au total de la commande
+    const newTotalPrice = Math.round((order.totalPrice + data.deliveryCost) * 100) / 100;
+    await this.prisma.order.update({
+      where: { id: data.orderId },
+      data: { totalPrice: newTotalPrice },
+    });
+
+    // Mettre à jour l'escrow si existant
+    const escrow = await this.prisma.escrow.findUnique({ where: { orderId: data.orderId } });
+    if (escrow) {
+      await this.prisma.escrow.update({
+        where: { orderId: data.orderId },
+        data: { amount: newTotalPrice },
+      });
+    }
+
+    // Notifier
+    await this.prisma.notification.create({
+      data: {
+        userId: order.buyerId,
+        title: '🚚 Livraison ajoutée',
+        message: `${data.label} — +${data.deliveryCost.toLocaleString('fr-FR')} FCFA. Nouveau total : ${newTotalPrice.toLocaleString('fr-FR')} FCFA.`,
+      },
+    });
+
+    return delivery;
+  }
+
+  /**
    * Crée une livraison pour une commande
    */
   async createDelivery(orderId: string, data: {
