@@ -160,6 +160,48 @@ export class AuthService {
     };
   }
 
+  // ─── Mot de passe oublié — envoi du code de réinitialisation ──────────────
+  async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) throw new BadRequestException('Aucun compte avec cet email');
+
+    const code = this.generateOtp();
+    const exp = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+
+    await this.prisma.user.update({
+      where: { email },
+      data: { verifyCode: code, verifyCodeExp: exp },
+    });
+
+    await this.sendVerificationCode(user.phone || '', email, code, user.name);
+
+    return {
+      message: 'Un code de réinitialisation a été envoyé.',
+      email,
+      ...(this.shouldExposeOtp && { devOtpCode: code }),
+    };
+  }
+
+  // ─── Réinitialisation du mot de passe ───────────────────────────────────────
+  async resetPassword(email: string, code: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) throw new BadRequestException('Utilisateur introuvable');
+    if (!user.verifyCode || user.verifyCode !== code) {
+      throw new BadRequestException('Code incorrect');
+    }
+    if (user.verifyCodeExp && user.verifyCodeExp < new Date()) {
+      throw new BadRequestException('Code expiré. Veuillez demander un nouveau code.');
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { email },
+      data: { password: hashed, verifyCode: null, verifyCodeExp: null },
+    });
+
+    return { message: 'Mot de passe réinitialisé avec succès. Vous pouvez vous connecter.' };
+  }
+
   // ─── Connexion ──────────────────────────────────────────────────────────────
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({ where: { email: dto.email } });

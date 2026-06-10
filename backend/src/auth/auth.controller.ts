@@ -33,6 +33,18 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Mot de passe oublié' })
+  forgotPassword(@Body('email') email: string) {
+    return this.authService.forgotPassword(email);
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Réinitialiser le mot de passe' })
+  resetPassword(@Body() body: { email: string; code: string; newPassword: string }) {
+    return this.authService.resetPassword(body.email, body.code, body.newPassword);
+  }
+
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

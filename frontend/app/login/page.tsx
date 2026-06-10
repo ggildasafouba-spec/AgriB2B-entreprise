@@ -70,6 +70,9 @@ export default function LoginPage() {
           <Link href="/register" className="text-green-600 hover:underline">S'inscrire</Link>
         </p>
         <p className="mt-2 text-center">
+          <Link href="/forgot-password" className="text-sm text-gray-500 hover:underline">Mot de passe oublié ?</Link>
+        </p>
+        <p className="mt-2 text-center">
           <Link href="/" className="text-sm text-gray-500 hover:underline">← Retour à l'accueil</Link>
         </p>
       </div>

@@ -20,6 +20,8 @@ export const authApi = {
   verify: (email: string, code: string) => api.post('/auth/verify', { email, code }),
   resendCode: (email: string) => api.post('/auth/resend-code', { email }),
   login: (data: any) => api.post('/auth/login', data),
+  forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (email: string, code: string, newPassword: string) => api.post('/auth/reset-password', { email, code, newPassword }),
   profile: () => api.get('/auth/profile'),
   deleteAccount: () => api.delete('/auth/account'),
 };
