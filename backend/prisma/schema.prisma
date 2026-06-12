@@ -425,3 +425,29 @@ model ArticleView {
 
   @@index([articleId])
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Demandes de livraison (acheteur → transporteurs urbains type Yango)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+model DeliveryRequest {
+  id              String   @id @default(uuid())
+  orderId         String   @unique
+  buyerId         String
+  pickupAddress   String
+  deliveryAddress String
+  distanceKm      Float?
+  estimatedPrice  Float    @default(0)
+  proposedPrice   Float?
+  description     String?
+  status          String   @default("OPEN") // OPEN, ACCEPTED, COMPLETED, CANCELLED
+  acceptedById    String?
+  acceptedPrice   Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([buyerId])
+  @@index([acceptedById])
+}

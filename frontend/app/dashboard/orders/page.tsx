@@ -561,12 +561,19 @@ const DELIVERY_TARIFFS = [
 
 function DeliveryOptionsInline({ orderId, onDeliveryCreated }: { orderId: string; onDeliveryCreated: () => void }) {
   const [showOptions, setShowOptions] = useState(false);
+  const [mode, setMode] = useState<'tarif' | 'livreur'>('tarif');
   const [selected, setSelected] = useState<any>(null);
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
+  const [pickupAddress, setPickupAddress] = useState('');
+  const [distanceKm, setDistanceKm] = useState<number>(0);
+  const [proposedPrice, setProposedPrice] = useState('');
+  const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async () => {
+  const estimatedPrice = distanceKm > 0 ? Math.max(Math.round(distanceKm * 100), 500) : 500;
+
+  const handleSubmitTarif = async () => {
     if (!selected) return toast.error('Choisissez une option de livraison');
     if (!address) return toast.error('Indiquez l\'adresse de livraison');
     if (!phone) return toast.error('Indiquez le téléphone du destinataire');
@@ -589,12 +596,39 @@ function DeliveryOptionsInline({ orderId, onDeliveryCreated }: { orderId: string
     }
   };
 
+  const handleSubmitLivreur = async () => {
+    if (!pickupAddress) return toast.error('Indiquez l\'adresse de récupération');
+    if (!address) return toast.error('Indiquez l\'adresse de livraison');
+    setSubmitting(true);
+    try {
+      await deliveryApi.createRequest({
+        orderId,
+        pickupAddress,
+        deliveryAddress: address,
+        distanceKm: distanceKm || undefined,
+        proposedPrice: proposedPrice ? parseInt(proposedPrice) : undefined,
+        description: description || undefined,
+      });
+      toast.success('Demande de livraison envoyée aux transporteurs !');
+      setShowOptions(false);
+      onDeliveryCreated();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (!showOptions) {
     return (
       <div className="mt-3 flex gap-2 flex-wrap">
-        <button onClick={() => setShowOptions(true)}
+        <button onClick={() => { setShowOptions(true); setMode('tarif'); }}
           className="flex items-center gap-2 px-3 py-2 bg-purple-50 text-purple-700 rounded-lg text-sm hover:bg-purple-100 transition">
           <Truck className="w-4 h-4" /> Options de livraison
+        </button>
+        <button onClick={() => { setShowOptions(true); setMode('livreur'); }}
+          className="flex items-center gap-2 px-3 py-2 bg-orange-50 text-orange-700 rounded-lg text-sm hover:bg-orange-100 transition">
+          🚗 Demander un livreur
         </button>
         <Link href={`/dashboard/orders/${orderId}/delivery`}
           className="flex items-center gap-2 px-3 py-2 bg-gray-50 text-gray-600 rounded-lg text-sm hover:bg-gray-100 transition">
@@ -606,42 +640,93 @@ function DeliveryOptionsInline({ orderId, onDeliveryCreated }: { orderId: string
 
   return (
     <div className="mt-3 bg-purple-50 border border-purple-200 rounded-xl p-4">
-      <h4 className="font-semibold text-sm text-purple-800 mb-3">🚚 Choisissez votre mode de livraison</h4>
-      <div className="space-y-2 mb-4">
-        {DELIVERY_TARIFFS.map((opt, i) => (
-          <button key={i} type="button" onClick={() => setSelected(opt)}
-            className={`w-full text-left px-3 py-2 rounded-lg border-2 text-sm transition ${
-              selected === opt ? 'border-purple-500 bg-purple-100' : 'border-gray-200 bg-white hover:border-gray-300'
-            }`}>
-            <span className="font-medium">{opt.label}</span>
-            <span className="float-right font-bold text-green-700">{opt.price.toLocaleString('fr-FR')} FCFA</span>
-          </button>
-        ))}
+      {/* Tabs mode */}
+      <div className="flex gap-2 mb-4">
+        <button onClick={() => setMode('tarif')}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium ${mode === 'tarif' ? 'bg-purple-600 text-white' : 'bg-white text-purple-700'}`}>
+          📦 Tarif fixe
+        </button>
+        <button onClick={() => setMode('livreur')}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium ${mode === 'livreur' ? 'bg-orange-600 text-white' : 'bg-white text-orange-700'}`}>
+          🚗 Demander un livreur
+        </button>
       </div>
 
-      {selected && (
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-medium text-gray-600">Adresse de livraison</label>
-            <input type="text" value={address} onChange={e => setAddress(e.target.value)}
-              placeholder="Ex: Quartier Bastos, après le carrefour..."
-              className="w-full border rounded-lg px-3 py-2 text-sm mt-1" />
+      {mode === 'tarif' && (
+        <>
+          <h4 className="font-semibold text-sm text-purple-800 mb-3">Choisissez un tarif de livraison</h4>
+          <div className="space-y-2 mb-4">
+            {DELIVERY_TARIFFS.map((opt, i) => (
+              <button key={i} type="button" onClick={() => setSelected(opt)}
+                className={`w-full text-left px-3 py-2 rounded-lg border-2 text-sm transition ${
+                  selected === opt ? 'border-purple-500 bg-purple-100' : 'border-gray-200 bg-white hover:border-gray-300'
+                }`}>
+                <span className="font-medium">{opt.label}</span>
+                <span className="float-right font-bold text-green-700">{opt.price.toLocaleString('fr-FR')} FCFA</span>
+              </button>
+            ))}
           </div>
-          <div>
-            <label className="text-xs font-medium text-gray-600">Téléphone destinataire</label>
-            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
-              placeholder="+237 6XX XXX XXX"
-              className="w-full border rounded-lg px-3 py-2 text-sm mt-1" />
+          {selected && (
+            <div className="space-y-3">
+              <input type="text" value={address} onChange={e => setAddress(e.target.value)}
+                placeholder="Adresse de livraison" className="w-full border rounded-lg px-3 py-2 text-sm" />
+              <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+                placeholder="Téléphone destinataire" className="w-full border rounded-lg px-3 py-2 text-sm" />
+              <div className="flex gap-2">
+                <button onClick={handleSubmitTarif} disabled={submitting}
+                  className="flex-1 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50">
+                  {submitting ? 'Commande...' : `Confirmer — +${selected.price.toLocaleString('fr-FR')} FCFA`}
+                </button>
+                <button onClick={() => setShowOptions(false)} className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Annuler</button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {mode === 'livreur' && (
+        <>
+          <h4 className="font-semibold text-sm text-orange-800 mb-3">🚗 Demander un livreur (type Yango)</h4>
+          <p className="text-xs text-gray-500 mb-3">Un transporteur inscrit sur la plateforme prendra en charge votre livraison</p>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-gray-600">Adresse de récupération (chez le vendeur)</label>
+              <input type="text" value={pickupAddress} onChange={e => setPickupAddress(e.target.value)}
+                placeholder="Ex: Marché Mokolo, Yaoundé" className="w-full border rounded-lg px-3 py-2 text-sm mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-600">Adresse de livraison (chez vous)</label>
+              <input type="text" value={address} onChange={e => setAddress(e.target.value)}
+                placeholder="Ex: Quartier Bastos, Yaoundé" className="w-full border rounded-lg px-3 py-2 text-sm mt-1" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-600">Distance estimée (km) — optionnel</label>
+              <input type="number" value={distanceKm || ''} onChange={e => setDistanceKm(parseFloat(e.target.value) || 0)}
+                placeholder="Ex: 8" min="0" className="w-full border rounded-lg px-3 py-2 text-sm mt-1" />
+              {distanceKm > 0 && (
+                <p className="text-xs text-green-600 mt-1">💡 Prix estimé : {estimatedPrice.toLocaleString('fr-FR')} FCFA (100 FCFA/km)</p>
+              )}
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-600">Votre prix proposé (FCFA) — optionnel</label>
+              <input type="number" value={proposedPrice} onChange={e => setProposedPrice(e.target.value)}
+                placeholder={`Ex: ${estimatedPrice}`} min="0" className="w-full border rounded-lg px-3 py-2 text-sm mt-1" />
+              <p className="text-xs text-gray-400 mt-1">Laissez vide pour utiliser le prix estimé. Le transporteur peut négocier.</p>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-600">Description (optionnel)</label>
+              <input type="text" value={description} onChange={e => setDescription(e.target.value)}
+                placeholder="Ex: Colis fragile, 2 sacs de 10kg" className="w-full border rounded-lg px-3 py-2 text-sm mt-1" />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={handleSubmitLivreur} disabled={submitting}
+                className="flex-1 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50">
+                {submitting ? 'Envoi...' : 'Publier la demande aux transporteurs'}
+              </button>
+              <button onClick={() => setShowOptions(false)} className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Annuler</button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button onClick={handleSubmit} disabled={submitting}
-              className="flex-1 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 disabled:opacity-50">
-              {submitting ? 'Commande...' : `Confirmer — +${selected.price.toLocaleString('fr-FR')} FCFA`}
-            </button>
-            <button onClick={() => setShowOptions(false)}
-              className="px-4 py-2 border rounded-lg text-sm hover:bg-gray-50">Annuler</button>
-          </div>
-        </div>
+        </>
       )}
     </div>
   );

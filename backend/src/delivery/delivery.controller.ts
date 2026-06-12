@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { DeliveryService } from './delivery.service';
+import { DeliveryRequestService } from './delivery-request.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -8,7 +9,10 @@ import { Roles } from '../auth/roles.decorator';
 @ApiTags('Delivery')
 @Controller('delivery')
 export class DeliveryController {
-  constructor(private deliveryService: DeliveryService) {}
+  constructor(
+    private deliveryService: DeliveryService,
+    private deliveryRequestService: DeliveryRequestService,
+  ) {}
 
   @Get('service-options')
   @ApiOperation({ summary: 'Options de qualité de service disponibles' })
@@ -86,5 +90,56 @@ export class DeliveryController {
   @ApiOperation({ summary: 'Mes livraisons (transporteur)' })
   getMyDeliveries(@Request() req: any) {
     return this.deliveryService.getTransporterDeliveries(req.user.id);
+  }
+
+  // ═══ Demandes de livraison urbaine ═══════════════════════════════════════════
+
+  @Post('request')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Créer une demande de livraison (acheteur)' })
+  createRequest(@Request() req: any, @Body() body: {
+    orderId: string;
+    pickupAddress: string;
+    deliveryAddress: string;
+    distanceKm?: number;
+    proposedPrice?: number;
+    description?: string;
+  }) {
+    return this.deliveryRequestService.createRequest(req.user.id, body);
+  }
+
+  @Get('requests/open')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('TRANSPORTER', 'ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Demandes de livraison disponibles (transporteurs)' })
+  getOpenRequests() {
+    return this.deliveryRequestService.getOpenRequests();
+  }
+
+  @Get('requests/mine')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Mes demandes de livraison (acheteur)' })
+  getMyRequests(@Request() req: any) {
+    return this.deliveryRequestService.getMyRequests(req.user.id);
+  }
+
+  @Put('request/:id/accept')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('TRANSPORTER')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Accepter une demande de livraison (transporteur)' })
+  acceptRequest(@Param('id') id: string, @Request() req: any, @Body('acceptedPrice') acceptedPrice?: number) {
+    return this.deliveryRequestService.acceptRequest(id, req.user.id, acceptedPrice);
+  }
+
+  @Put('request/:id/cancel')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Annuler une demande de livraison (acheteur)' })
+  cancelRequest(@Param('id') id: string, @Request() req: any) {
+    return this.deliveryRequestService.cancelRequest(id, req.user.id);
   }
 }

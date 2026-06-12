@@ -240,6 +240,19 @@ export const deliveryApi = {
   updateStatus: (deliveryId: string, data: { status: string; location?: string; description?: string; photoUrl?: string }) =>
     api.put(`/delivery/${deliveryId}/status`, data),
   getMyDeliveries: () => api.get('/delivery/my-deliveries'),
+  // Demandes de livraison urbaine
+  createRequest: (data: {
+    orderId: string;
+    pickupAddress: string;
+    deliveryAddress: string;
+    distanceKm?: number;
+    proposedPrice?: number;
+    description?: string;
+  }) => api.post('/delivery/request', data),
+  getOpenRequests: () => api.get('/delivery/requests/open'),
+  getMyRequests: () => api.get('/delivery/requests/mine'),
+  acceptRequest: (id: string, acceptedPrice?: number) => api.put(`/delivery/request/${id}/accept`, { acceptedPrice }),
+  cancelRequest: (id: string) => api.put(`/delivery/request/${id}/cancel`),
 };
 
 // Journal Agricole (Prix & Articles)
