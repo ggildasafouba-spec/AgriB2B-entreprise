@@ -6,9 +6,7 @@ import { ShoppingCart, Package, TrendingUp, Shield, Truck } from 'lucide-react';
 function BrandLogo() {
   return (
     <div className="flex items-center gap-3">
-      <div className="inline-flex items-center justify-center w-12 h-12 rounded-3xl bg-green-600 text-white text-2xl shadow-lg">
-        🌾
-      </div>
+      <img src="/icons/android-chrome-192x192.png" alt="AgriB2B" className="w-12 h-12 rounded-full" />
       <div>
         <div className="text-lg font-bold text-green-700">AgriB2B</div>
         <div className="text-xs text-gray-500 font-semibold italic">&laquo; La terre produit, AgriB2B distribue &raquo;</div>
@@ -54,7 +52,7 @@ export default function Home() {
           <div className="mx-auto max-w-5xl rounded-[2rem] overflow-hidden shadow-xl shadow-green-100">
             <div className="bg-gradient-to-br from-green-600 to-green-800 p-12 md:p-16">
               <div className="inline-flex items-center gap-4 mb-6">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-[1.5rem] bg-white/20 text-white text-3xl shadow-lg">🌾</div>
+                <img src="/icons/android-chrome-192x192.png" alt="AgriB2B" className="w-16 h-16 rounded-full bg-white/20 shadow-lg" />
                 <div className="text-left">
                   <p className="text-sm uppercase tracking-[0.3em] text-green-200 font-semibold">AgriB2B</p>
                   <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight">La plateforme agricole B2B.</h1>

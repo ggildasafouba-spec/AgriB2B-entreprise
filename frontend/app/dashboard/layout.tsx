@@ -86,7 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }`}>
         <div className="p-6 border-b">
           <div className="inline-flex items-center gap-3 mb-4">
-            <span className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-green-600 text-white text-lg">🌾</span>
+            <img src="/icons/android-chrome-192x192.png" alt="AgriB2B" className="w-10 h-10 rounded-full" />
             <div>
               <h1 className="text-lg font-bold text-green-700">AgriB2B</h1>
               <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em]">Plateforme Agricole B2B</p>
@@ -156,7 +156,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <span className="font-bold text-green-700">🌾 AgriB2B</span>
+          <span className="font-bold text-green-700"><img src="/icons/android-chrome-192x192.png" alt="AgriB2B" className="w-8 h-8 rounded-full inline mr-2" />AgriB2B</span>
           <div className="w-8" />
         </header>
         <main className="flex-1 p-4 lg:p-8 overflow-auto">{children}</main>
