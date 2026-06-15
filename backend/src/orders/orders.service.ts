@@ -14,9 +14,8 @@ export class OrdersService {
   ) {}
 
   async create(dto: CreateOrderDto, buyerId: string) {
-    let totalPrice = 0;
+    // 1. Enrichir les items avec les données produit
     const enrichedItems: any[] = [];
-
     for (const item of dto.items) {
       const product = await this.prisma.product.findUnique({
         where: { id: item.productId },
@@ -26,77 +25,98 @@ export class OrdersService {
       if (!product.stock || product.stock.quantity < item.quantity) {
         throw new BadRequestException(`Stock insuffisant pour ${product.name}`);
       }
-      totalPrice += product.price * item.quantity;
       enrichedItems.push({ product, quantity: item.quantity, unitPrice: product.price });
     }
 
-    const sellerId = enrichedItems[0].product.sellerId;
-
-    // Calculer le coût de livraison si une option est choisie
-    let deliveryCost = 0;
-    if (dto.deliveryOption) {
-      try {
-        const option = JSON.parse(dto.deliveryOption);
-        deliveryCost = option.price || 0;
-        totalPrice += deliveryCost;
-      } catch {}
+    // 2. Grouper par vendeur
+    const sellerGroups: Record<string, any[]> = {};
+    for (const item of enrichedItems) {
+      const sid = item.product.sellerId;
+      if (!sellerGroups[sid]) sellerGroups[sid] = [];
+      sellerGroups[sid].push(item);
     }
 
-    // Détermine le taux de commission selon le type de compte du vendeur
-    const seller = await this.prisma.user.findUnique({ where: { id: sellerId } });
-    const rate = seller?.accountType === 'COMPANY' ? COMPANY_COMMISSION : INDIVIDUAL_COMMISSION;
+    // 3. Créer une commande par vendeur
+    const orders: any[] = [];
+    const sellerIds = Object.keys(sellerGroups);
 
-    // Commission uniquement sur le montant des produits (pas la livraison)
-    const productTotal = totalPrice - deliveryCost;
-    const commission   = Math.round(productTotal * rate * 100) / 100;
-    const sellerAmount = Math.round((productTotal - commission) * 100) / 100;
+    for (const sellerId of sellerIds) {
+      const items = sellerGroups[sellerId];
+      let totalPrice = items.reduce((sum: number, i: any) => sum + i.unitPrice * i.quantity, 0);
 
-    const order = await this.prisma.order.create({
-      data: {
-        buyerId,
-        sellerId,
-        totalPrice,
-        deliveryOption: dto.deliveryOption || null,
-        deliveryCostIncluded: deliveryCost,
-        items: {
-          create: enrichedItems.map(i => ({
-            productId: i.product.id,
-            quantity: i.quantity,
-            unitPrice: i.unitPrice,
-          })),
-        },
-        escrow: {
-          create: {
-            amount: totalPrice,
-            commission,
-            sellerAmount,
+      // Livraison : uniquement sur la première commande (ou répartir)
+      let deliveryCost = 0;
+      if (dto.deliveryOption && sellerIds.indexOf(sellerId) === 0) {
+        try {
+          const option = JSON.parse(dto.deliveryOption);
+          deliveryCost = option.price || 0;
+          totalPrice += deliveryCost;
+        } catch {}
+      }
+
+      // Commission
+      const seller = await this.prisma.user.findUnique({ where: { id: sellerId } });
+      const rate = seller?.accountType === 'COMPANY' ? COMPANY_COMMISSION : INDIVIDUAL_COMMISSION;
+      const productTotal = totalPrice - deliveryCost;
+      const commission = Math.round(productTotal * rate * 100) / 100;
+      const sellerAmount = Math.round((productTotal - commission) * 100) / 100;
+
+      const order = await this.prisma.order.create({
+        data: {
+          buyerId,
+          sellerId,
+          totalPrice,
+          deliveryOption: sellerIds.indexOf(sellerId) === 0 ? (dto.deliveryOption || null) : null,
+          deliveryCostIncluded: deliveryCost,
+          items: {
+            create: items.map((i: any) => ({
+              productId: i.product.id,
+              quantity: i.quantity,
+              unitPrice: i.unitPrice,
+            })),
+          },
+          escrow: {
+            create: {
+              amount: totalPrice,
+              commission,
+              sellerAmount,
+            },
           },
         },
-      },
-      include: { items: true, escrow: true },
-    });
-
-    // Déduire le stock
-    for (const item of enrichedItems) {
-      await this.prisma.stock.update({
-        where: { productId: item.product.id },
-        data: { quantity: { decrement: item.quantity } },
+        include: { items: true, escrow: true },
       });
+
+      // Déduire le stock
+      for (const item of items) {
+        await this.prisma.stock.update({
+          where: { productId: item.product.id },
+          data: { quantity: { decrement: item.quantity } },
+        });
+      }
+
+      // Notifier le vendeur
+      await this.prisma.notification.create({
+        data: {
+          userId: sellerId,
+          title: 'Nouvelle commande reçue',
+          message:
+            `Commande de ${productTotal.toLocaleString('fr-FR')} FCFA. ` +
+            `Commission plateforme (${Math.round(rate * 100)}%) : ${commission.toLocaleString('fr-FR')} FCFA. ` +
+            `Vous recevrez : ${sellerAmount.toLocaleString('fr-FR')} FCFA après livraison.`,
+        },
+      });
+
+      orders.push(order);
     }
 
-    // Notifier le vendeur avec détail commission
-    await this.prisma.notification.create({
-      data: {
-        userId: sellerId,
-        title: 'Nouvelle commande reçue',
-        message:
-          `Commande de ${totalPrice.toLocaleString('fr-FR')} FCFA. ` +
-          `Commission plateforme (${Math.round(rate * 100)}%) : ${commission.toLocaleString('fr-FR')} FCFA. ` +
-          `Vous recevrez : ${sellerAmount.toLocaleString('fr-FR')} FCFA après livraison.`,
-      },
-    });
+    // Si une seule commande, retourner directement
+    if (orders.length === 1) return orders[0];
 
-    return order;
+    // Si plusieurs commandes, retourner un résumé
+    return {
+      message: `${orders.length} commandes créées (une par vendeur)`,
+      orders,
+    };
   }
 
   async findAll(userId: string, role: string) {
