@@ -17,6 +17,7 @@ model User {
   phone           String?
   country         String?
   region          String?
+  logo            String?
   minOrderQty     Int           @default(1)
   isVerified      Boolean       @default(false)
   verifyCode      String?

@@ -23,6 +23,7 @@ export const authApi = {
   forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
   resetPassword: (email: string, code: string, newPassword: string) => api.post('/auth/reset-password', { email, code, newPassword }),
   profile: () => api.get('/auth/profile'),
+  updateProfile: (data: any) => api.put('/auth/profile', data),
   deleteAccount: () => api.delete('/auth/account'),
 };
 

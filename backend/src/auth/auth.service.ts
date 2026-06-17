@@ -249,12 +249,46 @@ export class AuthService {
         phone: true,
         country: true,
         region: true,
+        logo: true,
         minOrderQty: true,
         kycStatus: true,
         isVerified: true,
         createdAt: true,
       },
     });
+  }
+
+  // ─── Mise à jour du profil ──────────────────────────────────────────────────
+  async updateProfile(userId: string, data: { name?: string; phone?: string; country?: string; region?: string; logo?: string; minOrderQty?: number }) {
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.country !== undefined) updateData.country = data.country;
+    if (data.region !== undefined) updateData.region = data.region;
+    if (data.logo !== undefined) updateData.logo = data.logo;
+    if (data.minOrderQty !== undefined) updateData.minOrderQty = data.minOrderQty;
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        accountType: true,
+        phone: true,
+        country: true,
+        region: true,
+        logo: true,
+        minOrderQty: true,
+        kycStatus: true,
+        isVerified: true,
+        createdAt: true,
+      },
+    });
+
+    return updated;
   }
 
   // ─── Supprimer son propre compte ────────────────────────────────────────────

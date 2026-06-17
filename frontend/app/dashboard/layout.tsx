@@ -7,7 +7,7 @@ import { messagesApi, notificationsApi, ordersApi } from '../../lib/api';
 import { LanguageSwitcher } from '../../lib/i18n';
 import {
   Home, Package, ShoppingCart, Bell, Shield,
-  BarChart3, LogOut, Boxes, MessageSquare, CreditCard, Truck,
+  BarChart3, LogOut, Boxes, MessageSquare, CreditCard, Truck, UserCircle,
 } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -70,6 +70,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: '/dashboard/notifications', label: 'Notifications', icon: <Bell className="w-5 h-5" />, badge: unreadNotif },
     { href: '/dashboard/kyc',           label: 'KYC',           icon: <Shield className="w-5 h-5" /> },
     { href: '/dashboard/transport',     label: 'Transport',     icon: <Truck className="w-5 h-5" /> },
+    { href: '/dashboard/profile',       label: 'Mon Profil',    icon: <UserCircle className="w-5 h-5" /> },
     ...(user.role === 'ADMIN' ? [{ href: '/dashboard/admin', label: 'Admin', icon: <BarChart3 className="w-5 h-5" /> }] : []),
   ];
 

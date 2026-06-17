@@ -106,9 +106,7 @@ export class InvoicesService {
             {
               stack: [
                 { text: 'VENDEUR', style: 'label', margin: [0, 0, 0, 4] },
-                { text: order.seller?.name,   style: 'subheader' },
-                { text: order.seller?.email,  style: 'value' },
-                { text: order.seller?.phone || '', style: 'value' },
+                { text: `VND-${order.sellerId.slice(0, 6).toUpperCase()}`, style: 'subheader' },
                 { text: [order.seller?.region, order.seller?.country].filter(Boolean).join(', '), style: 'value' },
               ],
               width: '50%',

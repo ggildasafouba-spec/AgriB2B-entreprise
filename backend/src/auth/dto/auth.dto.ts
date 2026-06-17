@@ -71,3 +71,36 @@ export class LoginDto {
   @IsString()
   password: string;
 }
+
+export class UpdateProfileDto {
+  @ApiProperty({ example: 'Jean Dupont', required: false })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiProperty({ example: '+237600000000', required: false })
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @ApiProperty({ example: 'Cameroun', required: false })
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @ApiProperty({ example: 'Centre', required: false })
+  @IsOptional()
+  @IsString()
+  region?: string;
+
+  @ApiProperty({ example: 'https://res.cloudinary.com/.../logo.webp', required: false })
+  @IsOptional()
+  @IsString()
+  logo?: string;
+
+  @ApiProperty({ example: 10, required: false })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  minOrderQty?: number;
+}
