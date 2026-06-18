@@ -142,7 +142,7 @@ function FeatureCard({ icon, color, title, description, image, href }: any) {
   const Wrapper = href ? 'a' : 'div';
   const props = href ? { href, target: href.startsWith('http') ? '_blank' : undefined } : {};
   return (
-    <Wrapper {...props} className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden group cursor-pointer">
+    <Wrapper {...props} className="bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden group cursor-pointer relative">
       {/* Image */}
       <div className="relative h-40 overflow-hidden">
         <img
@@ -160,6 +160,11 @@ function FeatureCard({ icon, color, title, description, image, href }: any) {
       <div className="p-5">
         <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
         <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
+        {href && (
+          <span className="inline-block mt-3 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg group-hover:bg-green-700 transition">
+            Cliquer ici →
+          </span>
+        )}
       </div>
     </Wrapper>
   );

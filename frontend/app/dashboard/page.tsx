@@ -3,7 +3,7 @@ import { useAuth } from '../../lib/auth-context';
 import { useEffect, useState } from 'react';
 import { ordersApi, productsApi, notificationsApi } from '../../lib/api';
 import Link from 'next/link';
-import { ShoppingCart, Package, Truck, Newspaper } from 'lucide-react';
+import { ShoppingCart, Package, Truck } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -36,25 +36,6 @@ export default function DashboardPage() {
           </p>
           <p className="text-gray-500 mt-4">Bonjour <span className="font-semibold text-green-700">{user?.name}</span>, que souhaitez-vous faire aujourd&apos;hui ?</p>
         </div>
-
-        {/* Bannière Journal Agricole */}
-        <Link
-          href="/journal"
-          className="block mb-8 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-2xl hover:shadow-md transition-all duration-200 group"
-        >
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-yellow-100 rounded-xl group-hover:bg-yellow-200 transition">
-              <Newspaper className="w-6 h-6 text-yellow-700" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-gray-900">📰 Journal Agricole</h3>
-              <p className="text-sm text-gray-600">Prix du marché, actualités et conseils pour les producteurs — consultez les dernières infos !</p>
-            </div>
-            <span className="px-4 py-2 bg-yellow-500 text-white rounded-xl text-sm font-medium group-hover:bg-yellow-600 transition">
-              Cliquer ici →
-            </span>
-          </div>
-        </Link>
 
         <div className="grid md:grid-cols-3 gap-6">
           <RoleCard
