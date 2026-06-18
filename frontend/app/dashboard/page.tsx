@@ -29,7 +29,7 @@ export default function DashboardPage() {
     return (
       <div className="max-w-3xl mx-auto py-8">
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-gray-900">🌾 Bienvenue sur la plateforme AgriB2B</h1>
+          <h1 className="text-3xl font-bold text-gray-900"><img src="/icons/android-chrome-192x192.png" alt="AgriB2B" className="w-10 h-10 rounded-full inline mr-2 align-middle" />Bienvenue sur la plateforme AgriB2B</h1>
           <p className="text-green-700 mt-2 text-lg font-bold italic">&laquo; La terre produit, AgriB2B distribue &raquo;</p>
           <p className="text-gray-600 mt-3 text-sm max-w-xl mx-auto">
             Achetez, vendez et livrez des produits agricoles en toute confiance. Paiements sécurisés via Mobile Money, gestion des stocks en temps réel, logistique intégrée. +50 acteurs agricoles nous font déjà confiance.
