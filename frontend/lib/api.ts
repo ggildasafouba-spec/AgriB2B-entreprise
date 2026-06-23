@@ -1,4 +1,4 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
@@ -108,7 +108,7 @@ export const paymentsApi = {
 export const invoicesApi = {
   download: (orderId: string) => {
     // Pour les PDF, on appelle directement le backend sans passer par le proxy Next.js
-    // Le proxy Vercel ne gère pas bien les réponses binaires (blob)
+    // Le proxy Vercel ne gÃ¨re pas bien les rÃ©ponses binaires (blob)
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
@@ -166,7 +166,7 @@ export const transportApi = {
   deleteRate: (id: string) => api.delete(`/transport/rates/${id}`),
 };
 
-// Negotiations (Négociation de prix)
+// Negotiations (NÃ©gociation de prix)
 export const negotiationsApi = {
   create: (data: { productId: string; proposedPrice: number; quantity: number; message?: string }) =>
     api.post('/negotiations', data),
@@ -190,7 +190,7 @@ export const seasonsApi = {
     api.get('/products/seasons', { params: { month, region } }),
 };
 
-// Installments (Paiement échelonné)
+// Installments (Paiement Ã©chelonnÃ©)
 export const installmentsApi = {
   create: (orderId: string, installments: number) =>
     api.post('/installments', { orderId, installments }),
