@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto, UpdateOrderStatusDto } from './dto/order.dto';
 import { NotchPayService } from '../payments/notchpay.service';
+import { PushService } from '../push/push.service';
 
 const COMPANY_COMMISSION = 0.10; // 10%
 const INDIVIDUAL_COMMISSION = 0.05; // 5%
@@ -11,6 +12,7 @@ export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private notchPay: NotchPayService,
+    private pushService: PushService,
   ) {}
 
   async create(dto: CreateOrderDto, buyerId: string) {
@@ -94,17 +96,22 @@ export class OrdersService {
         });
       }
 
-      // Notifier le vendeur
+      // Notifier le vendeur (in-app + push)
       await this.prisma.notification.create({
         data: {
           userId: sellerId,
-          title: 'Nouvelle commande reçue',
+          title: '🛒 Nouvelle commande reçue',
           message:
             `Commande de ${productTotal.toLocaleString('fr-FR')} FCFA. ` +
             `Commission plateforme (${Math.round(rate * 100)}%) : ${commission.toLocaleString('fr-FR')} FCFA. ` +
             `Vous recevrez : ${sellerAmount.toLocaleString('fr-FR')} FCFA après livraison.`,
         },
       });
+      this.pushService.sendToUser(sellerId, {
+        title: '🛒 Nouvelle commande reçue',
+        body:  `Commande de ${productTotal.toLocaleString('fr-FR')} FCFA. Vous recevrez ${sellerAmount.toLocaleString('fr-FR')} FCFA.`,
+        url:   '/dashboard/orders',
+      }).catch(() => {});
 
       orders.push(order);
     }
@@ -255,7 +262,7 @@ export class OrdersService {
         });
       }
 
-      // Notifier le vendeur
+      // Notifier le vendeur modification (in-app + push)
       await this.prisma.notification.create({
         data: {
           userId: order.sellerId,
@@ -263,6 +270,11 @@ export class OrdersService {
           message: `La commande #${id.slice(0, 8)} a été modifiée par l'acheteur. Nouveau montant : ${totalPrice.toLocaleString('fr-FR')} FCFA.`,
         },
       });
+      this.pushService.sendToUser(order.sellerId, {
+        title: '✏️ Commande modifiée',
+        body:  `La commande #${id.slice(0, 8)} a été modifiée. Nouveau montant : ${totalPrice.toLocaleString('fr-FR')} FCFA.`,
+        url:   '/dashboard/orders',
+      }).catch(() => {});
     }
 
     // Retourner la commande mise à jour
@@ -339,12 +351,17 @@ export class OrdersService {
             });
 
             await this.prisma.notification.create({
-              data: {
-                userId: delivery.transporterId,
-                title: '💰 Paiement reçu',
-                message: `Votre paiement de ${delivery.transporterAmount.toLocaleString('fr-FR')} FCFA pour la livraison de la commande #${id.slice(0, 8)} a été envoyé.`,
-              },
-            });
+        data: {
+          userId: delivery.transporterId,
+          title: '💰 Paiement reçu',
+          message: `Votre paiement de ${delivery.transporterAmount.toLocaleString('fr-FR')} FCFA pour la livraison de la commande #${id.slice(0, 8)} a été envoyé.`,
+        },
+      });
+      this.pushService.sendToUser(delivery.transporterId, {
+        title: '💰 Paiement reçu',
+        body:  `Votre paiement de ${delivery.transporterAmount.toLocaleString('fr-FR')} FCFA pour la livraison #${id.slice(0, 8)} a été envoyé.`,
+        url:   '/dashboard/transport',
+      }).catch(() => {});
           } catch (err: any) {
             console.error(`Payout transporteur échoué pour commande ${id}: ${err.message}`);
           }
@@ -355,13 +372,18 @@ export class OrdersService {
         data: {
           userId: order.sellerId,
           title: 'Paiement libéré ✅',
-            message:
+          message:
             `Commande #${id.slice(0, 8)} livrée. ` +
             `Montant total : ${order.totalPrice.toLocaleString('fr-FR')} FCFA. ` +
             `Commission plateforme (${Math.round(rate * 100)}%) : ${commission.toLocaleString('fr-FR')} FCFA. ` +
             `Montant envoyé sur votre Mobile Money : ${sellerAmount.toLocaleString('fr-FR')} FCFA.`,
         },
       });
+      this.pushService.sendToUser(order.sellerId, {
+        title: '✅ Paiement libéré',
+        body:  `Commande #${id.slice(0, 8)} livrée. ${sellerAmount.toLocaleString('fr-FR')} FCFA envoyé sur votre Mobile Money.`,
+        url:   '/dashboard/payments',
+      }).catch(() => {});
     }
 
     if (dto.status === 'CANCELLED' && order.escrow) {
@@ -393,7 +415,7 @@ export class OrdersService {
         }).catch(() => {}); // Ignorer si le stock n'existe plus
       }
 
-      // Notifier l'acheteur
+      // Notifier l'acheteur — annulation (in-app + push)
       await this.prisma.notification.create({
         data: {
           userId: order.buyerId,
@@ -401,8 +423,13 @@ export class OrdersService {
           message: `Votre commande #${id.slice(0, 8)} a été annulée. Le montant de ${order.totalPrice.toLocaleString('fr-FR')} FCFA sera remboursé. Aucune commission n'a été prélevée.`,
         },
       });
+      this.pushService.sendToUser(order.buyerId, {
+        title: '🚫 Commande annulée',
+        body:  `Votre commande #${id.slice(0, 8)} a été annulée. Remboursement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA en cours.`,
+        url:   '/dashboard/orders',
+      }).catch(() => {});
 
-      // Notifier le vendeur
+      // Notifier le vendeur — annulation (in-app + push)
       await this.prisma.notification.create({
         data: {
           userId: order.sellerId,
@@ -410,9 +437,27 @@ export class OrdersService {
           message: `La commande #${id.slice(0, 8)} (${order.totalPrice.toLocaleString('fr-FR')} FCFA) a été annulée. Aucune commission n'a été prélevée et le stock a été restitué.`,
         },
       });
+      this.pushService.sendToUser(order.sellerId, {
+        title: '🚫 Commande annulée',
+        body:  `La commande #${id.slice(0, 8)} a été annulée. Stock restitué.`,
+        url:   '/dashboard/orders',
+      }).catch(() => {});
     }
 
     return updated;
+  }
+
+  async markAsPickup(id: string, userId: string) {
+    const order = await this.prisma.order.findUnique({ where: { id } });
+    if (!order) throw new NotFoundException('Commande introuvable');
+    if (order.buyerId !== userId) throw new BadRequestException('Non autorisé');
+
+    await this.prisma.order.update({
+      where: { id },
+      data: { deliveryOption: JSON.stringify({ type: 'PICKUP', label: 'Retrait sur place' }) },
+    });
+
+    return { message: 'Commande marquée comme retrait sur place' };
   }
 
   async deleteOrder(id: string, userId: string, role: string) {

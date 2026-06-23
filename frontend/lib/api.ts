@@ -50,6 +50,7 @@ export const ordersApi = {
   getOne: (id: string) => api.get(`/orders/${id}`),
   update: (id: string, data: any) => api.put(`/orders/${id}`, data),
   updateStatus: (id: string, status: string) => api.put(`/orders/${id}/status`, { status }),
+  markAsPickup: (id: string) => api.put(`/orders/${id}/pickup`),
   delete: (id: string) => api.delete(`/orders/${id}`),
 };
 

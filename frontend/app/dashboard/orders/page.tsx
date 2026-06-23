@@ -412,12 +412,6 @@ export default function OrdersPage() {
                   {order.status === 'PENDING' && order.buyerId === user?.id && (
                     <div>
                       <p className="text-sm text-amber-700 flex items-center gap-2 mb-2">⏳ En attente de confirmation du vendeur...</p>
-                      {/* Avertissement si pas de livraison choisie */}
-                      {!order.delivery && !order.deliveryCostIncluded && (
-                        <p className="text-xs text-orange-600 bg-orange-50 rounded-lg px-3 py-2 mb-2">
-                          ⚠️ Choisissez d&apos;abord une option de livraison ci-dessous avant de payer.
-                        </p>
-                      )}
                       <div className="flex gap-2 flex-wrap">
                         {(!order.payment || order.payment.status !== 'SUCCESS') && (
                           <button
@@ -455,12 +449,6 @@ export default function OrdersPage() {
                   {order.status === 'CONFIRMED' && order.buyerId === user?.id && (
                     <div>
                       <p className="text-sm text-blue-700 flex items-center gap-2 mb-2">✅ Commande confirmée par le vendeur.</p>
-                      {/* Avertissement si pas de livraison choisie */}
-                      {!order.delivery && !order.deliveryCostIncluded && (
-                        <p className="text-xs text-orange-600 bg-orange-50 rounded-lg px-3 py-2 mb-2">
-                          ⚠️ Choisissez d&apos;abord une option de livraison ci-dessous avant de payer.
-                        </p>
-                      )}
                       {(!order.payment || order.payment.status !== 'SUCCESS') && (
                         <button
                           onClick={() => { setPayModal(order); setPayForm({ provider: 'MTN_MOMO', phone: (user as any)?.phone || '' }); }}
@@ -587,74 +575,131 @@ export default function OrdersPage() {
       {/* ── Modal paiement ── */}
       {payModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-gray-900 mb-1">💳 Paiement</h3>
             <p className="text-gray-500 text-sm mb-5">
               Commande #{payModal.id.slice(0, 8).toUpperCase()} — <span className="font-bold text-green-700">{fmt(payModal.totalPrice)}</span>
             </p>
-            <form onSubmit={handlePay} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Moyen de paiement</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { value: 'MTN_MOMO', label: 'MTN MoMo', logo: '🟡' },
-                    { value: 'ORANGE_MONEY', label: 'Orange Money', logo: '🟠' },
-                    { value: 'MANUAL', label: 'Virement', logo: '🏦' },
-                  ].map(p => (
-                    <button key={p.value} type="button"
-                      onClick={() => setPayForm(f => ({ ...f, provider: p.value }))}
-                      className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition ${
-                        payForm.provider === p.value ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
-                      }`}>
-                      <span className="text-2xl">{p.logo}</span>
-                      <span className="text-xs font-medium text-center">{p.label}</span>
-                    </button>
-                  ))}
+
+            {/* Étape choix livraison — uniquement si pas de livraison choisie */}
+            {!payModal.delivery && !payModal.deliveryCostIncluded && !payModal.deliveryOption?.includes('PICKUP') ? (
+              <div className="space-y-4">
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+                  <p className="text-sm font-medium text-orange-800 mb-1">📦 Comment souhaitez-vous recevoir votre commande ?</p>
+                  <p className="text-xs text-orange-600">Choisissez avant de payer pour que le total soit complet.</p>
                 </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {payForm.provider === 'MANUAL' ? 'Référence de virement' : 'Numéro Mobile Money'}
-                </label>
-                <input type="text" value={payForm.phone}
-                  onChange={e => setPayForm(f => ({ ...f, phone: e.target.value }))}
-                  placeholder={payForm.provider === 'MANUAL' ? 'Référence ou numéro de reçu' : '+237 6XX XXX XXX'}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
-                  required />
-              </div>
-              <div className="bg-gray-50 rounded-xl p-4 text-sm space-y-2">
-                {payModal.deliveryCostIncluded > 0 && (
-                  <>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Produits</span>
-                      <span className="font-medium text-gray-700">{fmt(payModal.totalPrice - payModal.deliveryCostIncluded)}</span>
+                <button
+                  onClick={async () => {
+                    try {
+                      await ordersApi.markAsPickup(payModal.id);
+                      toast.success('Retrait sur place confirmé');
+                      setPayModal(null);
+                      load();
+                      // Réouvrir le modal après rafraîchissement
+                      setTimeout(() => {
+                        const updated = orders.find((o: any) => o.id === payModal.id);
+                        if (updated) {
+                          setPayModal({ ...payModal, deliveryOption: JSON.stringify({ type: 'PICKUP' }) });
+                        }
+                      }, 500);
+                    } catch (err: any) {
+                      toast.error(err.response?.data?.message || 'Erreur');
+                    }
+                  }}
+                  className="w-full text-left px-4 py-4 bg-white border-2 border-gray-200 rounded-xl hover:border-green-400 hover:bg-green-50 transition"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🏪</span>
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm">Retrait sur place</p>
+                      <p className="text-xs text-gray-500">Je viens chercher ma commande chez le vendeur</p>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Livraison (dont 3% frais service)</span>
-                      <span className="font-medium text-gray-700">{fmt(payModal.deliveryCostIncluded)}</span>
-                    </div>
-                    <div className="border-t pt-2 flex justify-between">
-                      <span className="text-gray-700 font-semibold">Total à payer</span>
-                      <span className="font-bold text-green-700">{fmt(payModal.totalPrice)}</span>
-                    </div>
-                  </>
-                )}
-                {!payModal.deliveryCostIncluded && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Montant à payer</span>
-                    <span className="font-bold text-green-700">{fmt(payModal.totalPrice)}</span>
                   </div>
-                )}
-              </div>
-              <div className="flex gap-3">
-                <button type="submit" disabled={paying}
-                  className="flex-1 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 disabled:opacity-50">
-                  {paying ? 'Traitement...' : 'Confirmer le paiement'}
+                </button>
+                <button
+                  onClick={() => { setPayModal(null); }}
+                  className="w-full text-left px-4 py-4 bg-white border-2 border-gray-200 rounded-xl hover:border-orange-400 hover:bg-orange-50 transition"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🚗</span>
+                    <div>
+                      <p className="font-semibold text-gray-900 text-sm">Je veux une livraison</p>
+                      <p className="text-xs text-gray-500">Choisissez une option de livraison sur la commande, puis revenez payer</p>
+                    </div>
+                  </div>
                 </button>
                 <button type="button" onClick={() => setPayModal(null)}
-                  className="px-4 py-3 border rounded-xl hover:bg-gray-50">Annuler</button>
+                  className="w-full py-2 text-sm text-gray-500 hover:text-gray-700">Annuler</button>
               </div>
-            </form>
+            ) : (
+              /* Étape paiement — livraison déjà choisie ou retrait confirmé */
+              <form onSubmit={handlePay} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Moyen de paiement</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { value: 'MTN_MOMO', label: 'MTN MoMo', logo: '🟡' },
+                      { value: 'ORANGE_MONEY', label: 'Orange Money', logo: '🟠' },
+                      { value: 'MANUAL', label: 'Virement', logo: '🏦' },
+                    ].map(p => (
+                      <button key={p.value} type="button"
+                        onClick={() => setPayForm(f => ({ ...f, provider: p.value }))}
+                        className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition ${
+                          payForm.provider === p.value ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
+                        }`}>
+                        <span className="text-2xl">{p.logo}</span>
+                        <span className="text-xs font-medium text-center">{p.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {payForm.provider === 'MANUAL' ? 'Référence de virement' : 'Numéro Mobile Money'}
+                  </label>
+                  <input type="text" value={payForm.phone}
+                    onChange={e => setPayForm(f => ({ ...f, phone: e.target.value }))}
+                    placeholder={payForm.provider === 'MANUAL' ? 'Référence ou numéro de reçu' : '+237 6XX XXX XXX'}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
+                    required />
+                </div>
+                <div className="bg-gray-50 rounded-xl p-4 text-sm space-y-2">
+                  {payModal.deliveryCostIncluded > 0 && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Produits</span>
+                        <span className="font-medium text-gray-700">{fmt(payModal.totalPrice - payModal.deliveryCostIncluded)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Livraison (dont 3% frais service)</span>
+                        <span className="font-medium text-gray-700">{fmt(payModal.deliveryCostIncluded)}</span>
+                      </div>
+                      <div className="border-t pt-2 flex justify-between">
+                        <span className="text-gray-700 font-semibold">Total à payer</span>
+                        <span className="font-bold text-green-700">{fmt(payModal.totalPrice)}</span>
+                      </div>
+                    </>
+                  )}
+                  {!payModal.deliveryCostIncluded && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Montant à payer</span>
+                      <span className="font-bold text-green-700">{fmt(payModal.totalPrice)}</span>
+                    </div>
+                  )}
+                  {payModal.deliveryOption?.includes('PICKUP') && !payModal.deliveryCostIncluded && (
+                    <p className="text-xs text-green-600 mt-1">🏪 Retrait sur place — pas de frais de livraison</p>
+                  )}
+                </div>
+                <div className="flex gap-3">
+                  <button type="submit" disabled={paying}
+                    className="flex-1 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 disabled:opacity-50">
+                    {paying ? 'Traitement...' : 'Confirmer le paiement'}
+                  </button>
+                  <button type="button" onClick={() => setPayModal(null)}
+                    className="px-4 py-3 border rounded-xl hover:bg-gray-50">Annuler</button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

@@ -29,27 +29,6 @@ export class PaymentsService {
       throw new ConflictException('Cette commande est déjà payée');
     }
 
-    // ─── Option 2 : Bloquer le paiement si la livraison n'est pas encore définie ───
-    // Sauf si l'acheteur a explicitement choisi "retrait sur place" (deliveryOption contient "PICKUP")
-    const hasDelivery = order.delivery !== null;
-    const hasDeliveryRequest = await this.prisma.deliveryRequest.findUnique({ where: { orderId: dto.orderId } });
-    const isPickup = order.deliveryOption && order.deliveryOption.includes('PICKUP');
-
-    if (!hasDelivery && !hasDeliveryRequest && !isPickup && !order.deliveryCostIncluded) {
-      throw new BadRequestException(
-        'Veuillez d\'abord choisir une option de livraison avant de payer. ' +
-        'Les frais de livraison seront ajoutés au total de votre commande.'
-      );
-    }
-
-    // Si une demande de livraison existe mais n'est pas encore acceptée, avertir
-    if (hasDeliveryRequest && hasDeliveryRequest.status === 'OPEN' && !hasDelivery) {
-      throw new BadRequestException(
-        'Votre demande de livraison est en attente d\'un transporteur. ' +
-        'Patientez qu\'un transporteur accepte avant de payer, ou annulez la demande pour retirer sur place.'
-      );
-    }
-
     if (!dto.phone?.trim()) {
       throw new BadRequestException('Le numéro ou la référence est requis pour initier un paiement');
     }

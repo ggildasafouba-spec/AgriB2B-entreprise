@@ -46,4 +46,10 @@ export class OrdersController {
   deleteOrder(@Param('id') id: string, @Request() req) {
     return this.ordersService.deleteOrder(id, req.user.id, req.user.role);
   }
+
+  @Put(':id/pickup')
+  @ApiOperation({ summary: 'Marquer la commande comme retrait sur place (pas de livraison)' })
+  markAsPickup(@Param('id') id: string, @Request() req) {
+    return this.ordersService.markAsPickup(id, req.user.id);
+  }
 }
