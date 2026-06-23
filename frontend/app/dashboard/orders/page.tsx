@@ -125,107 +125,186 @@ export default function OrdersPage() {
         </button>
       </div>
 
-      {/* Formulaire nouvelle commande */}
+      {/* Formulaire nouvelle commande — layout 2 colonnes */}
       {showForm && (
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border border-green-100">
-          <h3 className="font-bold text-lg mb-4">Sélectionner des produits</h3>
-          <div className="grid md:grid-cols-3 gap-4 mb-4">
-            {products.map(p => (
-              <div key={p.id} className="border rounded-xl p-3 hover:border-green-400 transition">
-                <p className="font-semibold text-gray-900">{p.name}</p>
-                <p className="text-sm text-green-700 font-medium">{fmt(p.price)}/{p.unit}</p>
-                <p className="text-xs text-gray-400">Stock: {p.stock?.quantity} {p.unit}</p>
-                {p.minOrderQty > 1 && (
-                  <p className="text-xs text-amber-600">Min: {p.minOrderQty} {p.unit}</p>
-                )}
-                <button onClick={() => addToCart(p.id)}
-                  className="mt-2 w-full px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-sm font-medium">
-                  + Ajouter
-                </button>
-              </div>
-            ))}
-          </div>
+        <div className="mb-6">
+          <div className="flex gap-6 items-start">
 
-          {cart.length > 0 && (
-            <div className="border-t pt-4">
-              <h4 className="font-semibold mb-3">Récapitulatif de commande</h4>
-              <div className="space-y-2 mb-4">
-                  {cart.map(item => {
-                  const p = products.find(x => x.id === item.productId);
+            {/* ── Colonne gauche : catalogue produits ── */}
+            <div className="flex-1 bg-white rounded-xl shadow-lg border border-green-100 overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="font-bold text-lg text-gray-900">Sélectionner des produits</h3>
+                <span className="text-xs text-gray-400">{products.length} produit(s) disponible(s)</span>
+              </div>
+              <div className="p-5 grid sm:grid-cols-2 xl:grid-cols-3 gap-3 max-h-[65vh] overflow-y-auto">
+                {products.map(p => {
+                  const inCart = cart.find(i => i.productId === p.id);
                   return (
-                    <div key={item.productId} className="flex justify-between items-center text-sm bg-gray-50 rounded-lg px-3 py-2">
-                      <span className="font-medium">{p?.name} × {item.quantity} {p?.unit}</span>
-                      <div className="flex items-center gap-3">
-                        <span className="text-green-700 font-semibold">{fmt((p?.price || 0) * item.quantity)}</span>
-                        <button onClick={() => removeFromCart(item.productId)}
-                          className="text-red-400 hover:text-red-600 text-xs">✕</button>
-                      </div>
+                    <div key={p.id} className={`border-2 rounded-xl p-3 transition ${
+                      inCart ? 'border-green-400 bg-green-50' : 'border-gray-200 hover:border-green-300'
+                    }`}>
+                      {p.images?.[0] && (
+                        <img src={p.images[0]} alt={p.name} className="w-full h-24 object-cover rounded-lg mb-2" />
+                      )}
+                      <p className="font-semibold text-gray-900 text-sm">{p.name}</p>
+                      <p className="text-sm text-green-700 font-medium">{fmt(p.price)}/{p.unit}</p>
+                      <p className="text-xs text-gray-400">Stock: {p.stock?.quantity ?? '—'} {p.unit}</p>
+                      {p.minOrderQty > 1 && (
+                        <p className="text-xs text-amber-600">Min: {p.minOrderQty} {p.unit}</p>
+                      )}
+                      {inCart ? (
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => setCart(prev => prev.map(i =>
+                                i.productId === p.id
+                                  ? { ...i, quantity: Math.max(1, i.quantity - 1) }
+                                  : i
+                              ))}
+                              className="w-7 h-7 rounded-lg bg-green-100 text-green-700 font-bold hover:bg-green-200 flex items-center justify-center text-base"
+                            >−</button>
+                            <span className="w-8 text-center text-sm font-semibold">{inCart.quantity}</span>
+                            <button
+                              onClick={() => addToCart(p.id)}
+                              className="w-7 h-7 rounded-lg bg-green-100 text-green-700 font-bold hover:bg-green-200 flex items-center justify-center text-base"
+                            >+</button>
+                          </div>
+                          <button
+                            onClick={() => removeFromCart(p.id)}
+                            className="text-xs text-red-400 hover:text-red-600 px-1"
+                          >✕ Retirer</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => addToCart(p.id)}
+                          className="mt-2 w-full px-3 py-1.5 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 text-sm font-medium"
+                        >+ Ajouter</button>
+                      )}
                     </div>
                   );
                 })}
               </div>
+            </div>
 
-              {/* Options de livraison du vendeur */}
-              {(() => {
-                // Récupérer les options de livraison du premier produit du panier
-                const firstProduct = products.find(x => x.id === cart[0]?.productId);
-                const deliveryOpts = (firstProduct?.deliveryOptions || []).map((o: string) => {
-                  try { return JSON.parse(o); } catch { return null; }
-                }).filter(Boolean);
-
-                if (deliveryOpts.length === 0) return null;
-
-                return (
-                  <div className="mb-4">
-                    <h4 className="font-semibold mb-2 text-sm">🚚 Option de livraison</h4>
-                    <div className="space-y-2">
-                      <button type="button"
-                        onClick={() => setSelectedDeliveryOption(null)}
-                        className={`w-full text-left px-3 py-2 rounded-lg border-2 text-sm transition ${
-                          !selectedDeliveryOption ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
-                        }`}>
-                        <span className="font-medium">🚫 Pas de livraison (retrait par mes soins)</span>
-                        <span className="float-right text-green-700 font-bold">Gratuit</span>
-                      </button>
-                      {deliveryOpts.map((opt: any, i: number) => (
-                        <button key={i} type="button"
-                          onClick={() => setSelectedDeliveryOption(opt)}
-                          className={`w-full text-left px-3 py-2 rounded-lg border-2 text-sm transition ${
-                            selectedDeliveryOption?.label === opt.label ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-gray-300'
-                          }`}>
-                          <span className="font-medium">{opt.type === 'DOMICILE' ? '🏠' : '📍'} {opt.label}</span>
-                          <span className="float-right text-green-700 font-bold">{opt.price === 0 ? 'Gratuit' : `+${opt.price.toLocaleString('fr-FR')} FCFA`}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Détail financier */}
-                <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Sous-total produits</span>
-                  <span className="font-medium">{fmt(cartTotal)}</span>
+            {/* ── Colonne droite : panier sticky ── */}
+            <div className="w-80 flex-shrink-0 sticky top-4">
+              <div className="bg-white rounded-xl shadow-lg border border-green-100 overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                  <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                    <ShoppingCart className="w-4 h-4 text-green-600" /> Mon panier
+                  </h3>
+                  {cart.length > 0 && (
+                    <span className="text-xs bg-green-600 text-white rounded-full px-2 py-0.5 font-semibold">
+                      {cart.length} article{cart.length > 1 ? 's' : ''}
+                    </span>
+                  )}
                 </div>
-                {selectedDeliveryOption && selectedDeliveryOption.price > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Livraison ({selectedDeliveryOption.label})</span>
-                    <span className="font-medium">+{fmt(selectedDeliveryOption.price)}</span>
+
+                {cart.length === 0 ? (
+                  <div className="px-5 py-10 text-center text-gray-400">
+                    <ShoppingCart className="w-10 h-10 mx-auto mb-2 opacity-20" />
+                    <p className="text-sm">Panier vide</p>
+                    <p className="text-xs mt-1">Ajoutez des produits depuis le catalogue</p>
+                  </div>
+                ) : (
+                  <div className="p-4 space-y-3">
+                    {/* Articles du panier */}
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                      {cart.map(item => {
+                        const p = products.find(x => x.id === item.productId);
+                        return (
+                          <div key={item.productId} className="flex justify-between items-center text-sm bg-gray-50 rounded-lg px-3 py-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-800 truncate">{p?.name}</p>
+                              <p className="text-xs text-gray-400">{item.quantity} {p?.unit} × {fmt(p?.price || 0)}</p>
+                            </div>
+                            <div className="flex items-center gap-2 ml-2">
+                              <span className="text-green-700 font-semibold text-xs whitespace-nowrap">
+                                {fmt((p?.price || 0) * item.quantity)}
+                              </span>
+                              <button
+                                onClick={() => removeFromCart(item.productId)}
+                                className="text-red-400 hover:text-red-600 text-xs leading-none"
+                              >✕</button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Options de livraison */}
+                    {(() => {
+                      const firstProduct = products.find(x => x.id === cart[0]?.productId);
+                      const deliveryOpts = (firstProduct?.deliveryOptions || []).map((o: string) => {
+                        try { return JSON.parse(o); } catch { return null; }
+                      }).filter(Boolean);
+                      if (deliveryOpts.length === 0) return null;
+                      return (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-600 mb-1.5">🚚 Livraison</p>
+                          <div className="space-y-1.5">
+                            <button type="button"
+                              onClick={() => setSelectedDeliveryOption(null)}
+                              className={`w-full text-left px-3 py-2 rounded-lg border text-xs transition ${
+                                !selectedDeliveryOption ? 'border-green-500 bg-green-50 text-green-800' : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                              }`}>
+                              🚫 Retrait sur place
+                              <span className="float-right font-bold">Gratuit</span>
+                            </button>
+                            {deliveryOpts.map((opt: any, i: number) => (
+                              <button key={i} type="button"
+                                onClick={() => setSelectedDeliveryOption(opt)}
+                                className={`w-full text-left px-3 py-2 rounded-lg border text-xs transition ${
+                                  selectedDeliveryOption?.label === opt.label ? 'border-green-500 bg-green-50 text-green-800' : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                                }`}>
+                                {opt.type === 'DOMICILE' ? '🏠' : '📍'} {opt.label}
+                                <span className="float-right font-bold">{opt.price === 0 ? 'Gratuit' : `+${opt.price.toLocaleString('fr-FR')} FCFA`}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Récapitulatif financier */}
+                    <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 text-sm border border-gray-100">
+                      <div className="flex justify-between text-gray-500">
+                        <span>Sous-total</span>
+                        <span className="font-medium text-gray-700">{fmt(cartTotal)}</span>
+                      </div>
+                      {selectedDeliveryOption?.price > 0 && (
+                        <div className="flex justify-between text-gray-500">
+                          <span>Livraison</span>
+                          <span className="font-medium text-gray-700">+{fmt(selectedDeliveryOption.price)}</span>
+                        </div>
+                      )}
+                      <div className="border-t pt-2 flex justify-between font-bold text-base">
+                        <span>Total</span>
+                        <span className="text-green-700">{fmt(cartTotal + (selectedDeliveryOption?.price || 0))}</span>
+                      </div>
+                    </div>
+
+                    {/* Bouton confirmer */}
+                    <button
+                      onClick={handleOrder}
+                      className="w-full py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 text-sm transition"
+                    >
+                      ✅ Confirmer — {fmt(cartTotal + (selectedDeliveryOption?.price || 0))}
+                    </button>
+
+                    {/* Vider le panier */}
+                    <button
+                      onClick={() => { setCart([]); setSelectedDeliveryOption(null); }}
+                      className="w-full py-2 text-xs text-gray-400 hover:text-red-500 transition"
+                    >
+                      Vider le panier
+                    </button>
                   </div>
                 )}
-                <div className="border-t pt-2 flex justify-between font-bold text-base">
-                  <span>Total à payer</span>
-                  <span className="text-green-700">{fmt(cartTotal + (selectedDeliveryOption?.price || 0))}</span>
-                </div>
               </div>
-
-              <button onClick={handleOrder}
-                className="mt-4 w-full px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700">
-                Confirmer la commande — {fmt(cartTotal + (selectedDeliveryOption?.price || 0))}
-              </button>
             </div>
-          )}
+
+          </div>
         </div>
       )}
 

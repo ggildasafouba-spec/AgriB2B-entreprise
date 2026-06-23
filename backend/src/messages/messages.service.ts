@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MessageFilterUtil } from '../common/message-filter.util';
+import { PushService } from '../push/push.service';
 
 @Injectable()
 export class MessagesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private pushService: PushService,
+  ) {}
 
   // ─── Crée ou récupère une conversation basée sur l interlocuteur ───────────
   async createConversation(userId: string, participantId: string, orderId?: string) {
@@ -48,14 +52,20 @@ export class MessagesService {
       },
     });
 
-    // Notification au destinataire
+    // Notification au destinataire (in-app + push)
+    const notifTitle = `💬 Message de ${message.sender.name}`;
+    const notifBody  = content.length > 80 ? content.slice(0, 80) + '…' : content;
+
     await this.prisma.notification.create({
-      data: {
-        userId: receiverId,
-        title: `💬 Message de ${message.sender.name}`,
-        message: content.length > 80 ? content.slice(0, 80) + '…' : content,
-      },
+      data: { userId: receiverId, title: notifTitle, message: notifBody },
     });
+
+    // Push notification hors-ligne
+    this.pushService.sendToUser(receiverId, {
+      title: notifTitle,
+      body:  notifBody,
+      url:   '/dashboard/messages',
+    }).catch(() => {});
 
     return message;
   }

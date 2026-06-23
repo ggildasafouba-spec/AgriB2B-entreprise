@@ -5,19 +5,23 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { messagesApi, notificationsApi, ordersApi } from '../../lib/api';
 import { LanguageSwitcher } from '../../lib/i18n';
+import { usePushNotifications } from '../../lib/usePushNotifications';
 import {
   Home, Package, ShoppingCart, Bell, Shield,
   BarChart3, LogOut, Boxes, MessageSquare, CreditCard, Truck, UserCircle,
 } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, logout, loading } = useAuth();
+  const { user, logout, loading, token } = useAuth();
   const router   = useRouter();
   const pathname = usePathname();
   const [unreadMsg,  setUnreadMsg]  = useState(0);
   const [unreadNotif, setUnreadNotif] = useState(0);
   const [pendingPayments, setPendingPayments] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Activer les push notifications dès que l'utilisateur est connecté
+  usePushNotifications(token);
 
   useEffect(() => {
     if (!loading && !user) router.push('/login');

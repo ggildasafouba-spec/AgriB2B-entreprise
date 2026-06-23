@@ -1,12 +1,16 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PushService } from '../push/push.service';
 
 const COMMISSION_RATE = 0.05; // Taux moyen de fallback (5% particuliers, 10% entreprises)
 const TRANSPORT_COMMISSION_RATE = 0.03;
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private pushService: PushService,
+  ) {}
 
   async getDashboard() {
     const [users, products, orders, pendingKyc, deliveredAgg, transportRatesCount] = await Promise.all([
@@ -191,13 +195,20 @@ export class AdminService {
       select: { id: true },
     });
 
-    const notifications = users.map(u => ({
-      userId: u.id,
-      title,
-      message,
-    }));
-
+    // Créer les notifications en base
+    const notifications = users.map(u => ({ userId: u.id, title, message }));
     const result = await this.prisma.notification.createMany({ data: notifications });
+
+    // Envoyer les push hors-ligne en parallèle (sans bloquer)
+    Promise.allSettled(
+      users.map(u =>
+        this.pushService.sendToUser(u.id, {
+          title,
+          body: message,
+          url: '/dashboard/notifications',
+        }),
+      ),
+    ).catch(() => {});
 
     return {
       success: true,
