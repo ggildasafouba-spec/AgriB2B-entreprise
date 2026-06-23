@@ -128,10 +128,10 @@ export default function OrdersPage() {
       {/* Formulaire nouvelle commande — layout 2 colonnes */}
       {showForm && (
         <div className="mb-6">
-          <div className="flex gap-6 items-start">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1.5rem', alignItems: 'start' }}>
 
             {/* ── Colonne gauche : catalogue produits ── */}
-            <div className="flex-1 bg-white rounded-xl shadow-lg border border-green-100 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-lg border border-green-100 overflow-hidden">
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 className="font-bold text-lg text-gray-900">Sélectionner des produits</h3>
                 <span className="text-xs text-gray-400">{products.length} produit(s) disponible(s)</span>
@@ -186,8 +186,8 @@ export default function OrdersPage() {
               </div>
             </div>
 
-            {/* ── Colonne droite : panier sticky ── */}
-            <div className="w-80 flex-shrink-0 sticky top-4">
+            {/* ── Colonne droite : panier ── */}
+            <div style={{ position: 'sticky', top: '1rem' }}>
               <div className="bg-white rounded-xl shadow-lg border border-green-100 overflow-hidden">
                 <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                   <h3 className="font-bold text-gray-900 flex items-center gap-2">
