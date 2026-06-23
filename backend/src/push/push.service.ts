@@ -18,8 +18,12 @@ export class PushService implements OnModuleInit {
       return;
     }
 
-    webpush.setVapidDetails(email, publicKey, privateKey);
-    this.logger.log('✅ Web Push (VAPID) initialisé');
+    try {
+      webpush.setVapidDetails(email, publicKey, privateKey);
+      this.logger.log('✅ Web Push (VAPID) initialisé');
+    } catch (err: any) {
+      this.logger.warn(`⚠️  Clés VAPID invalides — push notifications désactivées: ${err.message}`);
+    }
   }
 
   // ─── Enregistrer ou mettre à jour un abonnement ───────────────────────────
