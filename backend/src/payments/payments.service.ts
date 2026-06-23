@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, ConflictException, 
 import { PrismaService } from '../prisma/prisma.service';
 import { CommissionService } from '../common/commission.service';
 import { NotchPayService } from './notchpay.service';
+import { PushService } from '../push/push.service';
 import { InitiatePaymentDto } from './dto/payment.dto';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -13,18 +14,40 @@ export class PaymentsService {
     private prisma: PrismaService,
     private commissionService: CommissionService,
     private notchPay: NotchPayService,
+    private pushService: PushService,
   ) {}
 
   // ─── Initier un paiement MTN, Orange ou virement bancaire ────────────────
   async initiate(dto: InitiatePaymentDto, userId: string) {
     const order = await this.prisma.order.findUnique({
       where: { id: dto.orderId },
-      include: { payment: true },
+      include: { payment: true, delivery: true },
     });
     if (!order) throw new NotFoundException('Commande introuvable');
     if (order.buyerId !== userId) throw new BadRequestException('Non autorisé');
     if (order.payment && order.payment.status === 'SUCCESS') {
       throw new ConflictException('Cette commande est déjà payée');
+    }
+
+    // ─── Option 2 : Bloquer le paiement si la livraison n'est pas encore définie ───
+    // Sauf si l'acheteur a explicitement choisi "retrait sur place" (deliveryOption contient "PICKUP")
+    const hasDelivery = order.delivery !== null;
+    const hasDeliveryRequest = await this.prisma.deliveryRequest.findUnique({ where: { orderId: dto.orderId } });
+    const isPickup = order.deliveryOption && order.deliveryOption.includes('PICKUP');
+
+    if (!hasDelivery && !hasDeliveryRequest && !isPickup && !order.deliveryCostIncluded) {
+      throw new BadRequestException(
+        'Veuillez d\'abord choisir une option de livraison avant de payer. ' +
+        'Les frais de livraison seront ajoutés au total de votre commande.'
+      );
+    }
+
+    // Si une demande de livraison existe mais n'est pas encore acceptée, avertir
+    if (hasDeliveryRequest && hasDeliveryRequest.status === 'OPEN' && !hasDelivery) {
+      throw new BadRequestException(
+        'Votre demande de livraison est en attente d\'un transporteur. ' +
+        'Patientez qu\'un transporteur accepte avant de payer, ou annulez la demande pour retirer sur place.'
+      );
     }
 
     if (!dto.phone?.trim()) {
@@ -96,23 +119,22 @@ export class PaymentsService {
       },
     });
 
-    // Notifier acheteur et vendeur
+    // Notifier acheteur et vendeur (in-app + push)
+    const buyerTitle   = dto.provider === 'MANUAL' ? '🧾 Paiement en attente' : '⏳ Paiement en attente';
+    const buyerMessage = dto.provider === 'MANUAL'
+      ? `Votre virement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA a été enregistré et est en attente de validation. Réf: ${transactionId}`
+      : `Votre paiement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA via ${this.providerLabel(dto.provider)} est en cours. Validez sur votre téléphone.`;
+    const sellerTitle   = '💰 Paiement en attente';
+    const sellerMessage = `Le paiement de la commande #${dto.orderId.slice(0, 8)} (${order.totalPrice.toLocaleString('fr-FR')} FCFA) est en attente de validation.`;
+
     await this.prisma.notification.createMany({
       data: [
-        {
-          userId: order.buyerId,
-          title: dto.provider === 'MANUAL' ? '🧾 Paiement en attente' : '⏳ Paiement en attente',
-          message: dto.provider === 'MANUAL'
-            ? `Votre virement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA a été enregistré et est en attente de validation. Réf: ${transactionId}`
-            : `Votre paiement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA via ${this.providerLabel(dto.provider)} est en cours. Validez sur votre téléphone.`,
-        },
-        {
-          userId: order.sellerId,
-          title: '💰 Paiement en attente',
-          message: `Le paiement de la commande #${dto.orderId.slice(0, 8)} (${order.totalPrice.toLocaleString('fr-FR')} FCFA) est en attente de validation.`,
-        },
+        { userId: order.buyerId,  title: buyerTitle,  message: buyerMessage  },
+        { userId: order.sellerId, title: sellerTitle, message: sellerMessage },
       ],
     });
+    this.pushService.sendToUser(order.buyerId,  { title: buyerTitle,  body: buyerMessage,  url: '/dashboard/payments' }).catch(() => {});
+    this.pushService.sendToUser(order.sellerId, { title: sellerTitle, body: sellerMessage, url: '/dashboard/payments' }).catch(() => {});
 
     return {
       success: true,
@@ -224,6 +246,17 @@ export class PaymentsService {
         },
       ],
     });
+    // Push confirm/reject
+    const bTitle = dto.status === 'SUCCESS' ? '✅ Paiement validé' : '❌ Paiement refusé';
+    const bMsg   = dto.status === 'SUCCESS'
+      ? `Le paiement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA pour la commande #${orderId.slice(0, 8)} a été validé.`
+      : `Le paiement de la commande #${orderId.slice(0, 8)} a été refusé.`;
+    const sTitle = dto.status === 'SUCCESS' ? '✅ Paiement confirmé' : '❌ Paiement rejeté';
+    const sMsg   = dto.status === 'SUCCESS'
+      ? `Le paiement de la commande #${orderId.slice(0, 8)} a été confirmé.`
+      : `Le paiement de la commande #${orderId.slice(0, 8)} a été rejeté.`;
+    this.pushService.sendToUser(order.buyerId,  { title: bTitle, body: bMsg, url: '/dashboard/payments' }).catch(() => {});
+    this.pushService.sendToUser(order.sellerId, { title: sTitle, body: sMsg, url: '/dashboard/payments' }).catch(() => {});
 
     const updated = await this.prisma.payment.findUnique({ where: { orderId } });
     return updated;
@@ -282,6 +315,11 @@ export class PaymentsService {
               message: `Votre paiement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA a échoué. Veuillez réessayer.`,
             },
           });
+          this.pushService.sendToUser(order.buyerId, {
+            title: '❌ Paiement échoué',
+            body:  `Votre paiement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA a échoué. Veuillez réessayer.`,
+            url:   '/dashboard/payments',
+          }).catch(() => {});
         }
         this.logger.log(`Payment ${reference} marked as FAILED via webhook`);
       }
@@ -382,7 +420,7 @@ export class PaymentsService {
       },
     });
 
-    // Notifications
+    // Notifications paiement succès (in-app + push)
     await this.prisma.notification.createMany({
       data: [
         {
@@ -397,6 +435,16 @@ export class PaymentsService {
         },
       ],
     });
+    this.pushService.sendToUser(order.buyerId, {
+      title: '✅ Paiement validé',
+      body:  `Votre paiement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA a été confirmé avec succès.`,
+      url:   '/dashboard/payments',
+    }).catch(() => {});
+    this.pushService.sendToUser(order.sellerId, {
+      title: '✅ Paiement reçu',
+      body:  `Le paiement de la commande #${orderId.slice(0, 8)} (${order.totalPrice.toLocaleString('fr-FR')} FCFA) a été confirmé.`,
+      url:   '/dashboard/payments',
+    }).catch(() => {});
 
     return payment;
   }

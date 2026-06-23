@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 // Tarif de base par km (FCFA)
 const BASE_RATE_PER_KM = 100;
 const MIN_DELIVERY_PRICE = 500;
+const TRANSPORT_COMMISSION_RATE = 0.03; // 3% commission plateforme sur livraison
 
 @Injectable()
 export class DeliveryRequestService {
@@ -101,7 +102,11 @@ export class DeliveryRequestService {
     if (!request) throw new NotFoundException('Demande introuvable');
     if (request.status !== 'OPEN') throw new BadRequestException('Cette demande n\'est plus disponible');
 
-    const finalPrice = acceptedPrice || request.proposedPrice || request.estimatedPrice;
+    const basePrice = acceptedPrice || request.proposedPrice || request.estimatedPrice;
+    // Appliquer la commission plateforme de 3% sur la livraison
+    const commission = Math.round(basePrice * TRANSPORT_COMMISSION_RATE * 100) / 100;
+    const finalPrice = Math.round((basePrice + commission) * 100) / 100;
+    const transporterAmount = basePrice; // Le transporteur reçoit le prix de base (hors commission)
 
     const updated = await this.prisma.deliveryRequest.update({
       where: { id: requestId },
@@ -118,7 +123,7 @@ export class DeliveryRequestService {
       data: {
         userId: request.buyerId,
         title: '✅ Livraison acceptée',
-        message: `${transporter?.name} a accepté votre demande de livraison pour ${finalPrice.toLocaleString('fr-FR')} FCFA. Il vous contactera bientôt.`,
+        message: `${transporter?.name} a accepté votre demande de livraison pour ${finalPrice.toLocaleString('fr-FR')} FCFA (dont ${commission.toLocaleString('fr-FR')} FCFA de frais de service). Il vous contactera bientôt.`,
       },
     });
 
@@ -128,8 +133,24 @@ export class DeliveryRequestService {
       const newTotal = Math.round((order.totalPrice + finalPrice) * 100) / 100;
       await this.prisma.order.update({
         where: { id: request.orderId },
-        data: { totalPrice: newTotal },
+        data: {
+          totalPrice: newTotal,
+          deliveryCostIncluded: finalPrice,
+        },
       });
+
+      // Mettre à jour l'escrow avec les détails de la livraison
+      const escrow = await this.prisma.escrow.findUnique({ where: { orderId: request.orderId } });
+      if (escrow) {
+        await this.prisma.escrow.update({
+          where: { orderId: request.orderId },
+          data: {
+            amount: newTotal,
+            // On ajoute la commission transport à la commission plateforme existante
+            commission: Math.round((escrow.commission + commission) * 100) / 100,
+          },
+        });
+      }
     }
 
     return updated;

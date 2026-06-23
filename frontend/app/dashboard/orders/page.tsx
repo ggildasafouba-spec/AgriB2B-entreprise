@@ -412,6 +412,12 @@ export default function OrdersPage() {
                   {order.status === 'PENDING' && order.buyerId === user?.id && (
                     <div>
                       <p className="text-sm text-amber-700 flex items-center gap-2 mb-2">⏳ En attente de confirmation du vendeur...</p>
+                      {/* Avertissement si pas de livraison choisie */}
+                      {!order.delivery && !order.deliveryCostIncluded && (
+                        <p className="text-xs text-orange-600 bg-orange-50 rounded-lg px-3 py-2 mb-2">
+                          ⚠️ Choisissez d&apos;abord une option de livraison ci-dessous avant de payer.
+                        </p>
+                      )}
                       <div className="flex gap-2 flex-wrap">
                         {(!order.payment || order.payment.status !== 'SUCCESS') && (
                           <button
@@ -449,6 +455,12 @@ export default function OrdersPage() {
                   {order.status === 'CONFIRMED' && order.buyerId === user?.id && (
                     <div>
                       <p className="text-sm text-blue-700 flex items-center gap-2 mb-2">✅ Commande confirmée par le vendeur.</p>
+                      {/* Avertissement si pas de livraison choisie */}
+                      {!order.delivery && !order.deliveryCostIncluded && (
+                        <p className="text-xs text-orange-600 bg-orange-50 rounded-lg px-3 py-2 mb-2">
+                          ⚠️ Choisissez d&apos;abord une option de livraison ci-dessous avant de payer.
+                        </p>
+                      )}
                       {(!order.payment || order.payment.status !== 'SUCCESS') && (
                         <button
                           onClick={() => { setPayModal(order); setPayForm({ provider: 'MTN_MOMO', phone: (user as any)?.phone || '' }); }}
@@ -610,9 +622,29 @@ export default function OrdersPage() {
                   className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-400"
                   required />
               </div>
-              <div className="bg-gray-50 rounded-xl p-4 text-sm flex justify-between">
-                <span className="text-gray-500">Montant à payer</span>
-                <span className="font-bold text-green-700">{fmt(payModal.totalPrice)}</span>
+              <div className="bg-gray-50 rounded-xl p-4 text-sm space-y-2">
+                {payModal.deliveryCostIncluded > 0 && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Produits</span>
+                      <span className="font-medium text-gray-700">{fmt(payModal.totalPrice - payModal.deliveryCostIncluded)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Livraison (dont 3% frais service)</span>
+                      <span className="font-medium text-gray-700">{fmt(payModal.deliveryCostIncluded)}</span>
+                    </div>
+                    <div className="border-t pt-2 flex justify-between">
+                      <span className="text-gray-700 font-semibold">Total à payer</span>
+                      <span className="font-bold text-green-700">{fmt(payModal.totalPrice)}</span>
+                    </div>
+                  </>
+                )}
+                {!payModal.deliveryCostIncluded && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Montant à payer</span>
+                    <span className="font-bold text-green-700">{fmt(payModal.totalPrice)}</span>
+                  </div>
+                )}
               </div>
               <div className="flex gap-3">
                 <button type="submit" disabled={paying}

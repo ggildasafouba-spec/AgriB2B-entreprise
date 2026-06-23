@@ -127,7 +127,10 @@ export class DeliveryService {
     const newTotalPrice = Math.round((order.totalPrice + data.deliveryCost) * 100) / 100;
     await this.prisma.order.update({
       where: { id: data.orderId },
-      data: { totalPrice: newTotalPrice },
+      data: {
+        totalPrice: newTotalPrice,
+        deliveryCostIncluded: data.deliveryCost,
+      },
     });
 
     // Mettre à jour l'escrow si existant
@@ -209,7 +212,10 @@ export class DeliveryService {
     const newTotalPrice = Math.round((order.totalPrice + cost.totalCost) * 100) / 100;
     await this.prisma.order.update({
       where: { id: orderId },
-      data: { totalPrice: newTotalPrice },
+      data: {
+        totalPrice: newTotalPrice,
+        deliveryCostIncluded: cost.totalCost,
+      },
     });
 
     // Mettre à jour l'escrow si existant (recalculer avec le nouveau total)
