@@ -7,11 +7,12 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 /**
  * Convertit une clé VAPID base64url en Uint8Array pour PushManager.subscribe()
  */
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
   const rawData = window.atob(base64);
-  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+  const arr = new Uint8Array(Array.from(rawData).map((c) => c.charCodeAt(0)));
+  return arr.buffer as ArrayBuffer;
 }
 
 /**
@@ -47,7 +48,7 @@ export function usePushNotifications(token: string | null) {
         // 3. Vérifier la permission
         if (Notification.permission === 'denied') return;
 
-        let permission = Notification.permission;
+        let permission: NotificationPermission = Notification.permission;
         if (permission === 'default') {
           permission = await Notification.requestPermission();
         }
