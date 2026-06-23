@@ -104,29 +104,18 @@ export const paymentsApi = {
   confirm: (orderId: string, status: string) => api.put(`/payments/${orderId}/confirm`, { status }),
 };
 
-// Invoices
+// Invoices — appel direct au backend pour eviter la corruption binaire via le proxy Next.js
 export const invoicesApi = {
   download: (orderId: string) => {
-    // Pour les PDF, on appelle directement le backend sans passer par le proxy Next.js
-    // Le proxy Vercel ne gÃ¨re pas bien les rÃ©ponses binaires (blob)
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : '';
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-
-    if (backendUrl) {
-      // En production : appel direct au backend Railway
-      return axios.get(`${backendUrl}/invoices/${orderId}`, {
-        responseType: 'blob',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/pdf',
-        },
-      });
-    }
-
-    // En local / fallback : via le proxy
-    return api.get(`/invoices/${orderId}`, {
+    const base = backendUrl || API_URL;
+    return axios.get(base + '/invoices/' + orderId, {
       responseType: 'blob',
-      headers: { Accept: 'application/pdf' },
+      headers: {
+        Authorization: 'Bearer ' + token,
+        Accept: 'application/pdf',
+      },
     });
   },
 };
@@ -166,7 +155,7 @@ export const transportApi = {
   deleteRate: (id: string) => api.delete(`/transport/rates/${id}`),
 };
 
-// Negotiations (NÃ©gociation de prix)
+// Negotiations
 export const negotiationsApi = {
   create: (data: { productId: string; proposedPrice: number; quantity: number; message?: string }) =>
     api.post('/negotiations', data),
@@ -176,7 +165,7 @@ export const negotiationsApi = {
     api.put(`/negotiations/${id}/respond`, data),
 };
 
-// Reviews (Notes et avis)
+// Reviews
 export const reviewsApi = {
   create: (data: { orderId: string; targetId: string; rating: number; comment?: string; type: string }) =>
     api.post('/reviews', data),
@@ -184,13 +173,13 @@ export const reviewsApi = {
   getOrderReviews: (orderId: string) => api.get(`/reviews/order/${orderId}`),
 };
 
-// Seasons (Calendrier agricole)
+// Seasons
 export const seasonsApi = {
   get: (month?: number, region?: string) =>
     api.get('/products/seasons', { params: { month, region } }),
 };
 
-// Installments (Paiement Ã©chelonnÃ©)
+// Installments
 export const installmentsApi = {
   create: (orderId: string, installments: number) =>
     api.post('/installments', { orderId, installments }),
@@ -216,7 +205,7 @@ export const uploadApi = {
   },
 };
 
-// Delivery (Livraison)
+// Delivery
 export const deliveryApi = {
   getServiceOptions: () => api.get('/delivery/service-options'),
   calculateCost: (data: { transportRateId: string; weight: number; serviceType: string }) =>
@@ -241,7 +230,6 @@ export const deliveryApi = {
   updateStatus: (deliveryId: string, data: { status: string; location?: string; description?: string; photoUrl?: string }) =>
     api.put(`/delivery/${deliveryId}/status`, data),
   getMyDeliveries: () => api.get('/delivery/my-deliveries'),
-  // Demandes de livraison urbaine
   createRequest: (data: {
     orderId: string;
     pickupAddress: string;
@@ -256,7 +244,7 @@ export const deliveryApi = {
   cancelRequest: (id: string) => api.put(`/delivery/request/${id}/cancel`),
 };
 
-// Journal Agricole (Prix & Articles)
+// Journal Agricole
 export const journalApi = {
   getPrices: () => api.get('/journal/prices'),
   refreshPrices: () => api.post('/journal/prices/refresh'),
