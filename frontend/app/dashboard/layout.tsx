@@ -74,6 +74,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: '/dashboard/notifications', label: 'Notifications', icon: <Bell className="w-5 h-5" />, badge: unreadNotif },
     { href: '/dashboard/kyc',           label: 'KYC',           icon: <Shield className="w-5 h-5" /> },
     { href: '/dashboard/transport',     label: 'Transport',     icon: <Truck className="w-5 h-5" /> },
+    { href: '/dashboard/delivery-requests', label: 'Livraisons dispo', icon: <Truck className="w-5 h-5" /> },
     { href: '/dashboard/profile',       label: 'Mon Profil',    icon: <UserCircle className="w-5 h-5" /> },
     ...(user.role === 'ADMIN' ? [{ href: '/dashboard/admin', label: 'Admin', icon: <BarChart3 className="w-5 h-5" /> }] : []),
   ];

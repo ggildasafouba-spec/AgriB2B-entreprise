@@ -142,6 +142,7 @@ export default function DashboardPage() {
         </button>
       </div>
       <div className="grid md:grid-cols-2 gap-6">
+        <QuickAction href="/dashboard/delivery-requests" title="🚗 Demandes de livraison" desc="Voir et accepter les demandes disponibles" />
         <QuickAction href="/dashboard/transport" title="Mes tarifs" desc="Gérez vos grilles tarifaires de transport" />
         <QuickAction href="/dashboard/orders" title="Livraisons" desc="Suivez les livraisons en cours" />
         <QuickAction href="/dashboard/messages" title="Messages" desc="Communiquez avec les clients" />
