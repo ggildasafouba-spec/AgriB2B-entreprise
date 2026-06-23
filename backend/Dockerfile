@@ -8,6 +8,7 @@ COPY package.json package-lock.json ./
 RUN npm install
 
 COPY prisma ./prisma
+# Force regeneration of Prisma client (cache buster: schema updated with PushSubscription)
 RUN npx prisma generate
 
 COPY tsconfig.json ./
