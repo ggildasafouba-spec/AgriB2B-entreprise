@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from './prisma/prisma.module';
+import { PushModule } from './push/push.module';
 import { AuthModule } from './auth/auth.module';
 import { ProductsModule } from './products/products.module';
 import { StockModule } from './stock/stock.module';
@@ -18,6 +19,7 @@ import { UploadModule } from './upload/upload.module';
 @Module({
   imports: [
     PrismaModule,
+    PushModule,        // Global — doit être avant les modules qui l'utilisent
     AuthModule,
     ProductsModule,
     StockModule,

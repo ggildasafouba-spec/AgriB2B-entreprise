@@ -29,6 +29,7 @@ model User {
   orders          Order[]       @relation("BuyerOrders")
   soldOrders      Order[]       @relation("SellerOrders")
   notifications   Notification[]
+  pushSubscriptions PushSubscription[]
   kyc             Kyc?
   sentMessages    Message[]     @relation("SentMessages")
   receivedMessages Message[]    @relation("ReceivedMessages")
@@ -156,6 +157,19 @@ model Notification {
 
   @@index([userId])
   @@index([read])
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Kyc {
