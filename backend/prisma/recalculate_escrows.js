@@ -8,7 +8,6 @@ async function main() {
     include: {
       order: {
         include: { seller: { select: { accountType: true } } },
-        select: { id: true, totalPrice: true, deliveryCostIncluded: true, seller: true },
       },
     },
   });
