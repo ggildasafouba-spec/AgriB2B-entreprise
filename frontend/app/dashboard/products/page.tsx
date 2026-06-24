@@ -468,7 +468,7 @@ function ProductCard({ product: p, user, onDelete, onEdit, onClick }: any) {
         {(user?.role === 'ADMIN' || user?.id === p.sellerId) && (
           <button
             onClick={e => { e.stopPropagation(); onDelete(p.id); }}
-            className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+            className="absolute top-2 right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center transition shadow"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -476,7 +476,7 @@ function ProductCard({ product: p, user, onDelete, onEdit, onClick }: any) {
         {(user?.role === 'ADMIN' || user?.id === p.sellerId) && onEdit && (
           <button
             onClick={e => { e.stopPropagation(); onEdit(p); }}
-            className="absolute top-2 right-10 w-7 h-7 bg-blue-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs font-bold"
+            className="absolute top-2 right-10 w-7 h-7 bg-blue-500 text-white rounded-full flex items-center justify-center transition text-xs font-bold shadow"
           >
             ✏️
           </button>
