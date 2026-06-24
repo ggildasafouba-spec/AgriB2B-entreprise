@@ -217,27 +217,33 @@ export class DeliveryRequestService {
 
     // Si la demande avait été acceptée, retirer les frais de livraison du total
     if (wasAccepted && request.acceptedPrice) {
-      const order = await this.prisma.order.findUnique({ where: { id: request.orderId } });
+      const order = await this.prisma.order.findUnique({
+        where: { id: request.orderId },
+        include: { seller: true },
+      });
       if (order) {
-        const newTotal = Math.max(0, Math.round((order.totalPrice - request.acceptedPrice) * 100) / 100);
+        // Montant produits seul = total actuel - frais livraison
+        const productTotal = Math.max(0, Math.round((order.totalPrice - request.acceptedPrice) * 100) / 100);
         await this.prisma.order.update({
           where: { id: request.orderId },
           data: {
-            totalPrice: newTotal,
+            totalPrice: productTotal,
             deliveryCostIncluded: 0,
           },
         });
 
-        // Recalculer l'escrow
+        // Recalculer l'escrow : commission uniquement sur produits, plus de livraison
         const escrow = await this.prisma.escrow.findUnique({ where: { orderId: request.orderId } });
         if (escrow) {
-          const basePrice = request.acceptedPrice / (1 + TRANSPORT_COMMISSION_RATE);
-          const commission = request.acceptedPrice - basePrice;
+          const sellerRate = order.seller?.accountType === 'COMPANY' ? 0.10 : 0.05;
+          const productCommission = Math.round(productTotal * sellerRate * 100) / 100;
+          const sellerAmount = Math.round((productTotal - productCommission) * 100) / 100;
           await this.prisma.escrow.update({
             where: { orderId: request.orderId },
             data: {
-              amount: newTotal,
-              commission: Math.max(0, Math.round((escrow.commission - commission) * 100) / 100),
+              amount: productTotal,
+              commission: productCommission,
+              sellerAmount,
             },
           });
         }
