@@ -243,6 +243,7 @@ export const deliveryApi = {
   getMyRequests: () => api.get('/delivery/requests/mine'),
   acceptRequest: (id: string, acceptedPrice?: number) => api.put(`/delivery/request/${id}/accept`, { acceptedPrice }),
   cancelRequest: (id: string) => api.put(`/delivery/request/${id}/cancel`),
+  payDeliveryRequest: (id: string, provider: string, phone: string) => api.post(`/delivery/request/${id}/pay`, { provider, phone }),
 };
 
 // Journal Agricole

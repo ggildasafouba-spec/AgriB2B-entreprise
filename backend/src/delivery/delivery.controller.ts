@@ -142,4 +142,16 @@ export class DeliveryController {
   cancelRequest(@Param('id') id: string, @Request() req: any) {
     return this.deliveryRequestService.cancelRequest(id, req.user.id);
   }
+
+  @Post('request/:id/pay')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Payer la livraison séparément (commande déjà payée)' })
+  payDeliveryRequest(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Body() body: { provider: string; phone: string },
+  ) {
+    return this.deliveryRequestService.payDeliveryRequest(id, req.user.id, body);
+  }
 }

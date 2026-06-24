@@ -99,6 +99,7 @@ model Order {
   escrow          Escrow?
   payment         Payment?
   delivery        Delivery?
+  deliveryRequest DeliveryRequest?
   messages        Message[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -449,6 +450,7 @@ model ArticleView {
 model DeliveryRequest {
   id              String   @id @default(uuid())
   orderId         String   @unique
+  order           Order    @relation(fields: [orderId], references: [id])
   buyerId         String
   pickupAddress   String
   deliveryAddress String
@@ -459,6 +461,8 @@ model DeliveryRequest {
   status          String   @default("OPEN") // OPEN, ACCEPTED, COMPLETED, CANCELLED
   acceptedById    String?
   acceptedPrice   Float?
+  paymentStatus   String?  // PENDING, SUCCESS, FAILED
+  paymentRef      String?  // Référence transaction paiement livraison
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

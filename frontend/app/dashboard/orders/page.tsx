@@ -523,6 +523,18 @@ export default function OrdersPage() {
                   )
                 )}
 
+                {/* Paiement livraison séparé (si commande déjà payée et livraison acceptée) */}
+                {order.deliveryRequest?.status === 'ACCEPTED' && order.deliveryRequest?.paymentStatus === 'PENDING' && order.buyerId === user?.id && (
+                  <DeliveryPaymentButton
+                    deliveryRequestId={order.deliveryRequest.id}
+                    amount={order.deliveryRequest.acceptedPrice}
+                    onPaid={load}
+                  />
+                )}
+                {order.deliveryRequest?.status === 'ACCEPTED' && order.deliveryRequest?.paymentStatus === 'SUCCESS' && order.buyerId === user?.id && (
+                  <p className="mt-3 text-sm text-green-600 bg-green-50 rounded-lg px-3 py-2 w-fit">✅ Livraison payée</p>
+                )}
+
                 {/* Paiement échelonné (entreprises uniquement) */}
                 {user?.role === 'BUYER' && user?.accountType === 'COMPANY' && order.status !== 'CANCELLED' && (
                   <InstallmentButton orderId={order.id} totalPrice={order.totalPrice} onCreated={load} />
@@ -884,6 +896,87 @@ function DeliveryOptionsInline({ orderId, onDeliveryCreated }: { orderId: string
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// ── Composant paiement livraison séparé ──────────────────────────────────────
+function DeliveryPaymentButton({ deliveryRequestId, amount, onPaid }: { deliveryRequestId: string; amount: number; onPaid: () => void }) {
+  const [showForm, setShowForm] = useState(false);
+  const [provider, setProvider] = useState('MTN_MOMO');
+  const [phone, setPhone] = useState('');
+  const [paying, setPaying] = useState(false);
+  const { user } = useAuth();
+
+  const fmt = (n: number) => n.toLocaleString('fr-FR') + ' FCFA';
+
+  const handlePay = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPaying(true);
+    try {
+      const res = await deliveryApi.payDeliveryRequest(deliveryRequestId, provider, phone);
+      if (res.data.paymentUrl) {
+        window.location.href = res.data.paymentUrl;
+        return;
+      }
+      toast.success(`✅ ${res.data.message}`);
+      setShowForm(false);
+      onPaid();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur de paiement');
+    } finally {
+      setPaying(false);
+    }
+  };
+
+  if (!showForm) {
+    return (
+      <div className="mt-3 bg-orange-50 border border-orange-200 rounded-xl p-4">
+        <p className="text-sm font-medium text-orange-800 mb-2">🚗 Livraison acceptée — paiement requis</p>
+        <p className="text-xs text-orange-600 mb-3">Un transporteur a accepté votre demande. Payez pour lancer la livraison.</p>
+        <button
+          onClick={() => { setShowForm(true); setPhone((user as any)?.phone || ''); }}
+          className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700"
+        >
+          💳 Payer la livraison — {fmt(amount)}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 bg-white border border-orange-200 rounded-xl p-4 shadow-sm">
+      <h4 className="text-sm font-semibold text-gray-900 mb-3">💳 Payer la livraison — {fmt(amount)}</h4>
+      <form onSubmit={handlePay} className="space-y-3">
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { value: 'MTN_MOMO', label: 'MTN MoMo', logo: '🟡' },
+            { value: 'ORANGE_MONEY', label: 'Orange', logo: '🟠' },
+            { value: 'MANUAL', label: 'Virement', logo: '🏦' },
+          ].map(p => (
+            <button key={p.value} type="button"
+              onClick={() => setProvider(p.value)}
+              className={`flex flex-col items-center gap-1 p-2 rounded-lg border-2 text-xs transition ${
+                provider === p.value ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-300'
+              }`}>
+              <span className="text-lg">{p.logo}</span>
+              <span className="font-medium">{p.label}</span>
+            </button>
+          ))}
+        </div>
+        <input type="text" value={phone} onChange={e => setPhone(e.target.value)}
+          placeholder={provider === 'MANUAL' ? 'Référence virement' : '+237 6XX XXX XXX'}
+          className="w-full border rounded-lg px-3 py-2 text-sm"
+          required />
+        <div className="flex gap-2">
+          <button type="submit" disabled={paying}
+            className="flex-1 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50">
+            {paying ? 'Traitement...' : 'Confirmer'}
+          </button>
+          <button type="button" onClick={() => setShowForm(false)}
+            className="px-3 py-2 border rounded-lg text-sm hover:bg-gray-50">Annuler</button>
+        </div>
+      </form>
     </div>
   );
 }
