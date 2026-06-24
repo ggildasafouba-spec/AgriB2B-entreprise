@@ -377,8 +377,11 @@ export class PaymentsService {
     }
 
     // Calculer et créer l'escrow avec commission
+    // La commission vendeur s'applique uniquement sur les produits, PAS sur la livraison
+    const deliveryCost = order.deliveryCostIncluded || 0;
+    const productAmount = order.totalPrice - deliveryCost;
     const commissionDetails = this.commissionService.getCommissionDetails(
-      order.totalPrice,
+      productAmount,
       order.seller.accountType as any,
       order.seller.role,
     );
