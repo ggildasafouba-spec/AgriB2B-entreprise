@@ -161,7 +161,7 @@ export default function PaymentsPage() {
                     <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleDateString('fr-FR')}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-bold text-green-700">{fmt(order.totalPrice)}</p>
+                    <p className="text-xl font-bold text-green-700">{fmt(payment?.amount || order.totalPrice)}</p>
                     <PaymentBadge payment={payment} />
                   </div>
                 </div>
