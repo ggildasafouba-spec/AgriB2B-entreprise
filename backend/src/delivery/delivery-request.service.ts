@@ -196,17 +196,74 @@ export class DeliveryRequestService {
 
   /**
    * Annuler une demande (acheteur)
+   * Possible tant que la livraison n'a pas été payée
    */
   async cancelRequest(requestId: string, buyerId: string) {
     const request = await this.prisma.deliveryRequest.findUnique({ where: { id: requestId } });
     if (!request) throw new NotFoundException('Demande introuvable');
     if (request.buyerId !== buyerId) throw new ForbiddenException('Non autorisé');
-    if (request.status !== 'OPEN') throw new BadRequestException('Impossible d\'annuler une demande déjà acceptée');
+    if (request.paymentStatus === 'SUCCESS') {
+      throw new BadRequestException('Impossible d\'annuler une livraison déjà payée');
+    }
 
-    return this.prisma.deliveryRequest.update({
+    const wasAccepted = request.status === 'ACCEPTED';
+    const transporterId = request.acceptedById;
+
+    // Annuler la demande
+    await this.prisma.deliveryRequest.update({
       where: { id: requestId },
-      data: { status: 'CANCELLED' },
+      data: { status: 'CANCELLED', paymentStatus: null },
     });
+
+    // Si la demande avait été acceptée, retirer les frais de livraison du total
+    if (wasAccepted && request.acceptedPrice) {
+      const order = await this.prisma.order.findUnique({ where: { id: request.orderId } });
+      if (order) {
+        const newTotal = Math.max(0, Math.round((order.totalPrice - request.acceptedPrice) * 100) / 100);
+        await this.prisma.order.update({
+          where: { id: request.orderId },
+          data: {
+            totalPrice: newTotal,
+            deliveryCostIncluded: 0,
+          },
+        });
+
+        // Recalculer l'escrow
+        const escrow = await this.prisma.escrow.findUnique({ where: { orderId: request.orderId } });
+        if (escrow) {
+          const basePrice = request.acceptedPrice / (1 + TRANSPORT_COMMISSION_RATE);
+          const commission = request.acceptedPrice - basePrice;
+          await this.prisma.escrow.update({
+            where: { orderId: request.orderId },
+            data: {
+              amount: newTotal,
+              commission: Math.max(0, Math.round((escrow.commission - commission) * 100) / 100),
+            },
+          });
+        }
+      }
+
+      // Notifier le transporteur que la demande est annulée
+      if (transporterId) {
+        await this.prisma.notification.create({
+          data: {
+            userId: transporterId,
+            title: '❌ Livraison annulée',
+            message: `L'acheteur a annulé la demande de livraison ${request.pickupAddress} → ${request.deliveryAddress}. Vous n'avez plus à effectuer cette course.`,
+          },
+        });
+        this.pushService.sendToUser(transporterId, {
+          title: '❌ Livraison annulée',
+          body: `La livraison ${request.pickupAddress} → ${request.deliveryAddress} a été annulée par l'acheteur.`,
+          url: '/dashboard/delivery-requests',
+        }).catch(() => {});
+      }
+    }
+
+    // Si la demande était encore OPEN, notifier les transporteurs n'est pas nécessaire
+    // (personne ne l'avait acceptée)
+
+    return { message: 'Demande de livraison annulée' };
   }
 
   /**
