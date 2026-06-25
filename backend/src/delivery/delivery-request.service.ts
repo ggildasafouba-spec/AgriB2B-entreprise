@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException,
 import { PrismaService } from '../prisma/prisma.service';
 import { PushService } from '../push/push.service';
 import { NotchPayService } from '../payments/notchpay.service';
+import { SmsAlertService } from '../common/sms-alert.service';
 
 // Tarif de base par km (FCFA)
 const BASE_RATE_PER_KM = 100;
@@ -16,6 +17,7 @@ export class DeliveryRequestService {
     private prisma: PrismaService,
     private pushService: PushService,
     private notchPay: NotchPayService,
+    private smsAlertService: SmsAlertService,
   ) {}
 
   /**
@@ -160,6 +162,7 @@ export class DeliveryRequestService {
 
     // Notifier l'acheteur
     const transporter = await this.prisma.user.findUnique({ where: { id: transporterId }, select: { name: true, phone: true } });
+    const buyer = await this.prisma.user.findUnique({ where: { id: request.buyerId }, select: { phone: true } });
 
     if (alreadyPaid) {
       // Commande déjà payée → notification pour payer la livraison séparément
@@ -189,6 +192,14 @@ export class DeliveryRequestService {
         body: `${transporter?.name} a accepté. ${finalPrice.toLocaleString('fr-FR')} FCFA ajoutés au total de votre commande.`,
         url: '/dashboard/orders',
       }).catch(() => {});
+    }
+
+    // SMS alert à l'acheteur
+    if (buyer?.phone) {
+      this.smsAlertService.sendAlert(
+        buyer.phone,
+        `AgriB2B: ${transporter?.name || 'Un transporteur'} a accepté votre livraison. Montant: ${finalPrice.toLocaleString('fr-FR')} FCFA.`,
+      ).catch(() => {});
     }
 
     return updated;

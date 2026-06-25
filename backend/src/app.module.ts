@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from './prisma/prisma.module';
+import { CommonModule } from './common/common.module';
 import { PushModule } from './push/push.module';
 import { AuthModule } from './auth/auth.module';
 import { ProductsModule } from './products/products.module';
@@ -19,6 +20,7 @@ import { UploadModule } from './upload/upload.module';
 @Module({
   imports: [
     PrismaModule,
+    CommonModule,      // Global — services communs (SMS alerts, commission)
     PushModule,        // Global — doit être avant les modules qui l'utilisent
     AuthModule,
     ProductsModule,

@@ -8,7 +8,7 @@ import { LanguageSwitcher } from '../../lib/i18n';
 import { usePushNotifications } from '../../lib/usePushNotifications';
 import {
   Home, Package, ShoppingCart, Bell, Shield,
-  BarChart3, LogOut, Boxes, MessageSquare, CreditCard, Truck, UserCircle,
+  BarChart3, LogOut, Boxes, MessageSquare, CreditCard, Truck, UserCircle, MapPin, TrendingUp,
 } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -75,6 +75,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: '/dashboard/kyc',           label: 'KYC',           icon: <Shield className="w-5 h-5" /> },
     { href: '/dashboard/transport',     label: 'Transport',     icon: <Truck className="w-5 h-5" /> },
     { href: '/dashboard/delivery-requests', label: 'Livraisons dispo', icon: <Truck className="w-5 h-5" /> },
+    { href: '/dashboard/product-map',       label: 'Carte produits',  icon: <MapPin className="w-5 h-5" /> },
+    ...((user.role === 'SELLER' || user.role === 'ADMIN') ? [{ href: '/dashboard/seller-analytics', label: 'Analytiques', icon: <TrendingUp className="w-5 h-5" /> }] : []),
     { href: '/dashboard/profile',       label: 'Mon Profil',    icon: <UserCircle className="w-5 h-5" /> },
     ...(user.role === 'ADMIN' ? [{ href: '/dashboard/admin', label: 'Admin', icon: <BarChart3 className="w-5 h-5" /> }] : []),
   ];

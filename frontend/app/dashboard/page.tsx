@@ -124,6 +124,7 @@ export default function DashboardPage() {
           <QuickAction href="/dashboard/orders" title="Commandes reçues" desc="Gérez les commandes de vos clients" />
           <QuickAction href="/dashboard/stock" title="Gestion du stock" desc="Suivez vos inventaires en temps réel" />
           <QuickAction href="/dashboard/payments" title="Paiements" desc="Suivez vos revenus et paiements" />
+          <QuickAction href="/dashboard/seller-analytics" title="Analytiques" desc="Statistiques et performances de vente" />
         </div>
       </div>
     );

@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto, UpdateOrderStatusDto } from './dto/order.dto';
 import { NotchPayService } from '../payments/notchpay.service';
 import { PushService } from '../push/push.service';
+import { SmsAlertService } from '../common/sms-alert.service';
 
 const COMPANY_COMMISSION = 0.10; // 10%
 const INDIVIDUAL_COMMISSION = 0.05; // 5%
@@ -13,6 +14,7 @@ export class OrdersService {
     private prisma: PrismaService,
     private notchPay: NotchPayService,
     private pushService: PushService,
+    private smsAlertService: SmsAlertService,
   ) {}
 
   async create(dto: CreateOrderDto, buyerId: string) {
@@ -112,6 +114,14 @@ export class OrdersService {
         body:  `Commande de ${productTotal.toLocaleString('fr-FR')} FCFA. Vous recevrez ${sellerAmount.toLocaleString('fr-FR')} FCFA.`,
         url:   '/dashboard/orders',
       }).catch(() => {});
+
+      // SMS alert au vendeur
+      if (seller?.phone) {
+        this.smsAlertService.sendAlert(
+          seller.phone,
+          `AgriB2B: Nouvelle commande de ${productTotal.toLocaleString('fr-FR')} FCFA. Connectez-vous pour confirmer.`,
+        ).catch(() => {});
+      }
 
       orders.push(order);
     }

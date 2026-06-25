@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CommissionService } from '../common/commission.service';
+import { SmsAlertService } from '../common/sms-alert.service';
 import { NotchPayService } from './notchpay.service';
 import { PushService } from '../push/push.service';
 import { InitiatePaymentDto } from './dto/payment.dto';
@@ -13,6 +14,7 @@ export class PaymentsService {
   constructor(
     private prisma: PrismaService,
     private commissionService: CommissionService,
+    private smsAlertService: SmsAlertService,
     private notchPay: NotchPayService,
     private pushService: PushService,
   ) {}
@@ -427,6 +429,14 @@ export class PaymentsService {
       body:  `Le paiement de la commande #${orderId.slice(0, 8)} (${order.totalPrice.toLocaleString('fr-FR')} FCFA) a été confirmé.`,
       url:   '/dashboard/payments',
     }).catch(() => {});
+
+    // SMS alert au vendeur
+    if (order.seller?.phone) {
+      this.smsAlertService.sendAlert(
+        order.seller.phone,
+        `AgriB2B: Paiement de ${order.totalPrice.toLocaleString('fr-FR')} FCFA reçu pour commande #${orderId.slice(0, 8)}.`,
+      ).catch(() => {});
+    }
 
     return payment;
   }
