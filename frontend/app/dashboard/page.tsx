@@ -79,6 +79,26 @@ export default function DashboardPage() {
             <p className="text-xs text-gray-500">Notifications</p>
           </div>
         </div>
+
+        {/* Rubriques rapides */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+          <Link href="/dashboard/equipment" className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition text-center">
+            <span className="text-2xl">🚜</span>
+            <p className="text-sm font-medium text-gray-800 mt-2">Matériel Agricole</p>
+          </Link>
+          <Link href="/dashboard/classifieds" className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition text-center">
+            <span className="text-2xl">📋</span>
+            <p className="text-sm font-medium text-gray-800 mt-2">Annonces & Emplois</p>
+          </Link>
+          <Link href="/journal" className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition text-center">
+            <span className="text-2xl">📰</span>
+            <p className="text-sm font-medium text-gray-800 mt-2">Journal Agricole</p>
+          </Link>
+          <Link href="/dashboard/product-map" className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition text-center">
+            <span className="text-2xl">🌍</span>
+            <p className="text-sm font-medium text-gray-800 mt-2">Carte Produits</p>
+          </Link>
+        </div>
       </div>
     );
   }
