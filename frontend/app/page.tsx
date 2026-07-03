@@ -114,6 +114,20 @@ export default function Home() {
             image="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=400&h=200&fit=crop"
             href="/dashboard/classifieds"
           />
+          <FeatureCard
+            icon="📊"
+            color="from-teal-500 to-cyan-600"
+            title="Analytics & Commissions"
+            description="Tableaux de bord détaillés. Suivi des commissions, revenus et performances."
+            image="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=200&fit=crop"
+          />
+          <FeatureCard
+            icon="🌍"
+            color="from-yellow-500 to-amber-600"
+            title="Adapté à l'Afrique"
+            description="Calendrier des saisons camerounaises. Négociation de prix. Paiement Mobile Money."
+            image="https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=400&h=200&fit=crop"
+          />
         </div>
 
         {user && (
