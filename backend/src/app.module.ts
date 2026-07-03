@@ -16,6 +16,7 @@ import { TransportModule } from './transport/transport.module';
 import { DeliveryModule } from './delivery/delivery.module';
 import { JournalModule } from './journal/journal.module';
 import { UploadModule } from './upload/upload.module';
+import { ClassifiedsModule } from './classifieds/classifieds.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { UploadModule } from './upload/upload.module';
     DeliveryModule,
     JournalModule,
     UploadModule,
+    ClassifiedsModule,
   ],
 })
 export class AppModule {}

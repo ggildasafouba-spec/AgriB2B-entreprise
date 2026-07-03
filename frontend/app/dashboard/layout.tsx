@@ -75,6 +75,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: '/dashboard/kyc',           label: 'KYC',           icon: <Shield className="w-5 h-5" /> },
     { href: '/dashboard/transport',     label: 'Transport',     icon: <Truck className="w-5 h-5" /> },
     { href: '/dashboard/delivery-requests', label: 'Livraisons dispo', icon: <Truck className="w-5 h-5" /> },
+    { href: '/dashboard/equipment',         label: 'Matériel agricole', icon: <Package className="w-5 h-5" /> },
+    { href: '/dashboard/classifieds',       label: 'Annonces & Emplois', icon: <Boxes className="w-5 h-5" /> },
     { href: '/dashboard/product-map',       label: 'Carte produits',  icon: <MapPin className="w-5 h-5" /> },
     ...((user.role === 'SELLER' || user.role === 'ADMIN') ? [{ href: '/dashboard/seller-analytics', label: 'Analytiques', icon: <TrendingUp className="w-5 h-5" /> }] : []),
     { href: '/dashboard/profile',       label: 'Mon Profil',    icon: <UserCircle className="w-5 h-5" /> },

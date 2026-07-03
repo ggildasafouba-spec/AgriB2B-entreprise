@@ -1,0 +1,222 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../../../lib/auth-context';
+import api from '../../../lib/api';
+import toast from 'react-hot-toast';
+import { Plus, Trash2, Phone, MapPin, Search } from 'lucide-react';
+
+interface Equipment {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  condition: string;
+  category: string;
+  location: string;
+  images: string[];
+  contactPhone: string;
+  userId: string;
+  userName: string;
+  createdAt: string;
+}
+
+const CATEGORIES = [
+  'Tracteurs & Engins',
+  'Motopompes & Irrigation',
+  'Pulvérisateurs',
+  'Outils manuels',
+  'Semences & Plants',
+  'Engrais & Intrants',
+  'Stockage & Emballage',
+  'Autre',
+];
+
+export default function EquipmentPage() {
+  const { user } = useAuth();
+  const [items, setItems] = useState<Equipment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [filter, setFilter] = useState('');
+  const [form, setForm] = useState({
+    title: '', description: '', price: '', condition: 'Neuf',
+    category: CATEGORIES[0], location: '', images: [] as string[], imageInput: '', contactPhone: '',
+  });
+
+  useEffect(() => { load(); }, []);
+
+  const load = () => {
+    api.get('/equipment').then(r => setItems(r.data)).catch(() => {}).finally(() => setLoading(false));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await api.post('/equipment', {
+        title: form.title,
+        description: form.description,
+        price: parseFloat(form.price) || 0,
+        condition: form.condition,
+        category: form.category,
+        location: form.location || user?.region || '',
+        images: form.images,
+        contactPhone: form.contactPhone || user?.phone || '',
+      });
+      toast.success('Matériel publié !');
+      setShowForm(false);
+      setForm({ title: '', description: '', price: '', condition: 'Neuf', category: CATEGORIES[0], location: '', images: [], imageInput: '', contactPhone: '' });
+      load();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Supprimer cette annonce ?')) return;
+    try {
+      await api.delete(`/equipment/${id}`);
+      toast.success('Supprimé');
+      load();
+    } catch { toast.error('Erreur'); }
+  };
+
+  const addImage = () => {
+    if (form.imageInput.trim()) {
+      setForm(f => ({ ...f, images: [...f.images, f.imageInput.trim()], imageInput: '' }));
+    }
+  };
+
+  const filtered = items.filter(i =>
+    (!filter || i.category === filter) &&
+    true
+  );
+
+  if (loading) return <div className="text-center py-10 text-gray-500">Chargement...</div>;
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">🚜 Matériel Agricole</h1>
+          <p className="text-gray-500 text-sm mt-1">Achetez et vendez du matériel agricole entre professionnels</p>
+        </div>
+        <button onClick={() => setShowForm(!showForm)}
+          className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700">
+          <Plus className="w-4 h-4" /> Publier une annonce
+        </button>
+      </div>
+
+      {/* Formulaire */}
+      {showForm && (
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow p-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Titre *</label>
+            <input type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} required
+              className="w-full border rounded-lg px-3 py-2" placeholder="Ex: Motopompe Diesel 5CV" />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+            <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} required
+              className="w-full border rounded-lg px-3 py-2 h-20" placeholder="Décrivez l'état, les caractéristiques..." />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Prix (FCFA)</label>
+            <input type="number" value={form.price} onChange={e => setForm({...form, price: e.target.value})}
+              className="w-full border rounded-lg px-3 py-2" placeholder="0 = Prix à discuter" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">État</label>
+            <select value={form.condition} onChange={e => setForm({...form, condition: e.target.value})}
+              className="w-full border rounded-lg px-3 py-2">
+              <option>Neuf</option>
+              <option>Très bon état</option>
+              <option>Bon état</option>
+              <option>Usagé</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie *</label>
+            <select value={form.category} onChange={e => setForm({...form, category: e.target.value})}
+              className="w-full border rounded-lg px-3 py-2">
+              {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Localisation</label>
+            <input type="text" value={form.location} onChange={e => setForm({...form, location: e.target.value})}
+              className="w-full border rounded-lg px-3 py-2" placeholder="Ex: Douala, Littoral" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone de contact</label>
+            <input type="text" value={form.contactPhone} onChange={e => setForm({...form, contactPhone: e.target.value})}
+              className="w-full border rounded-lg px-3 py-2" placeholder="+237 6XX XXX XXX" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Images (URL)</label>
+            <div className="flex gap-2">
+              <input type="text" value={form.imageInput} onChange={e => setForm({...form, imageInput: e.target.value})}
+                className="flex-1 border rounded-lg px-3 py-2 text-sm" placeholder="https://..." />
+              <button type="button" onClick={addImage} className="px-3 py-2 bg-gray-200 rounded-lg text-sm">+</button>
+            </div>
+            {form.images.length > 0 && <p className="text-xs text-gray-400 mt-1">{form.images.length} image(s)</p>}
+          </div>
+          <div className="md:col-span-2 flex gap-3">
+            <button type="submit" className="px-5 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700">Publier</button>
+            <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2 border rounded-lg">Annuler</button>
+          </div>
+        </form>
+      )}
+
+      {/* Filtres */}
+      <div className="flex gap-2 mb-4 flex-wrap">
+        <button onClick={() => setFilter('')} className={`px-3 py-1.5 rounded-full text-xs font-medium ${!filter ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+          Tout
+        </button>
+        {CATEGORIES.map(c => (
+          <button key={c} onClick={() => setFilter(c)} className={`px-3 py-1.5 rounded-full text-xs font-medium ${filter === c ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+            {c}
+          </button>
+        ))}
+      </div>
+
+      {/* Liste */}
+      {filtered.length === 0 ? (
+        <div className="text-center py-16 text-gray-400">
+          <p className="text-lg">Aucune annonce pour le moment</p>
+          <p className="text-sm mt-1">Soyez le premier à publier !</p>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map(item => (
+            <div key={item.id} className="bg-white rounded-xl shadow hover:shadow-md transition overflow-hidden">
+              {item.images?.[0] && (
+                <img src={item.images[0]} alt={item.title} className="w-full h-40 object-cover" />
+              )}
+              <div className="p-4">
+                <div className="flex justify-between items-start">
+                  <h3 className="font-bold text-gray-900">{item.title}</h3>
+                  {(user?.id === item.userId || user?.role === 'ADMIN') && (
+                    <button onClick={() => handleDelete(item.id)} className="text-red-400 hover:text-red-600">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <p className="text-sm text-gray-500 mt-1 line-clamp-2">{item.description}</p>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="font-bold text-amber-700">
+                    {item.price > 0 ? `${item.price.toLocaleString('fr-FR')} FCFA` : 'Prix à discuter'}
+                  </span>
+                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{item.condition}</span>
+                </div>
+                <div className="mt-2 flex items-center gap-3 text-xs text-gray-400">
+                  <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {item.location}</span>
+                  <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {item.contactPhone}</span>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Par {item.userName} • {new Date(item.createdAt).toLocaleDateString('fr-FR')}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

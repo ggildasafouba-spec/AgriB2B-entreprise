@@ -106,6 +106,22 @@ export default function Home() {
             image="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=200&fit=crop"
           />
           <FeatureCard
+            icon="🚜"
+            color="from-amber-600 to-yellow-700"
+            title="Matériel Agricole"
+            description="Achetez et vendez du matériel agricole : tracteurs, motopompes, pulvérisateurs, semences, engrais."
+            image="https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?w=400&h=200&fit=crop"
+            href="/dashboard/equipment"
+          />
+          <FeatureCard
+            icon="📋"
+            color="from-pink-500 to-rose-600"
+            title="Annonces & Emplois"
+            description="Publiez et consultez des annonces : offres d'emploi agricole, services, partenariats, opportunités."
+            image="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=400&h=200&fit=crop"
+            href="/dashboard/classifieds"
+          />
+          <FeatureCard
             icon="🌍"
             color="from-yellow-500 to-amber-600"
             title="Adapté à l'Afrique"
