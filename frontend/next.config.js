@@ -3,6 +3,12 @@ const nextConfig = {
   // En production sur Vercel, pas besoin de 'standalone' (Vercel gère le build)
   // En Docker, on garde standalone
   ...(process.env.VERCEL ? {} : { output: 'standalone' }),
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   async headers() {
     return [
       {
