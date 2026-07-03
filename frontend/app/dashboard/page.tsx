@@ -82,21 +82,33 @@ export default function DashboardPage() {
 
         {/* Rubriques rapides */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-          <Link href="/dashboard/equipment" className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition text-center">
-            <span className="text-2xl">🚜</span>
-            <p className="text-sm font-medium text-gray-800 mt-2">Matériel Agricole</p>
+          <Link href="/dashboard/equipment" className="group bg-gradient-to-br from-amber-50 to-orange-100 border-2 border-amber-200 rounded-xl p-5 shadow-sm hover:shadow-lg hover:border-amber-400 transition text-center">
+            <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-amber-200 flex items-center justify-center group-hover:scale-110 transition">
+              <img src="https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?w=56&h=56&fit=crop" alt="Matériel" className="w-14 h-14 rounded-full object-cover" />
+            </div>
+            <p className="text-sm font-bold text-amber-800">Matériel Agricole</p>
+            <p className="text-xs text-amber-600 mt-1">Tracteurs, motopompes, engrais...</p>
           </Link>
-          <Link href="/dashboard/classifieds" className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition text-center">
-            <span className="text-2xl">📋</span>
-            <p className="text-sm font-medium text-gray-800 mt-2">Annonces & Emplois</p>
+          <Link href="/dashboard/classifieds" className="group bg-gradient-to-br from-pink-50 to-rose-100 border-2 border-rose-200 rounded-xl p-5 shadow-sm hover:shadow-lg hover:border-rose-400 transition text-center">
+            <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-rose-200 flex items-center justify-center group-hover:scale-110 transition">
+              <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=56&h=56&fit=crop" alt="Annonces" className="w-14 h-14 rounded-full object-cover" />
+            </div>
+            <p className="text-sm font-bold text-rose-800">Annonces & Emplois</p>
+            <p className="text-xs text-rose-600 mt-1">Offres, services, partenariats</p>
           </Link>
-          <Link href="/journal" className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition text-center">
-            <span className="text-2xl">📰</span>
-            <p className="text-sm font-medium text-gray-800 mt-2">Journal Agricole</p>
+          <Link href="/journal" className="group bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-blue-200 rounded-xl p-5 shadow-sm hover:shadow-lg hover:border-blue-400 transition text-center">
+            <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-blue-200 flex items-center justify-center group-hover:scale-110 transition">
+              <img src="https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=56&h=56&fit=crop" alt="Journal" className="w-14 h-14 rounded-full object-cover" />
+            </div>
+            <p className="text-sm font-bold text-blue-800">Journal Agricole</p>
+            <p className="text-xs text-blue-600 mt-1">Actualités, prix du marché</p>
           </Link>
-          <Link href="/dashboard/product-map" className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition text-center">
-            <span className="text-2xl">🌍</span>
-            <p className="text-sm font-medium text-gray-800 mt-2">Carte Produits</p>
+          <Link href="/dashboard/product-map" className="group bg-gradient-to-br from-emerald-50 to-green-100 border-2 border-emerald-200 rounded-xl p-5 shadow-sm hover:shadow-lg hover:border-emerald-400 transition text-center">
+            <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-emerald-200 flex items-center justify-center group-hover:scale-110 transition">
+              <img src="https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=56&h=56&fit=crop" alt="Carte" className="w-14 h-14 rounded-full object-cover" />
+            </div>
+            <p className="text-sm font-bold text-emerald-800">Carte Produits</p>
+            <p className="text-xs text-emerald-600 mt-1">Produits par région</p>
           </Link>
         </div>
       </div>
