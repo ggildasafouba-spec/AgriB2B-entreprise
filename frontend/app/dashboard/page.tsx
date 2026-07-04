@@ -84,7 +84,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
           <Link href="/dashboard/equipment" className="group bg-gradient-to-br from-amber-50 to-orange-100 border-2 border-amber-200 rounded-xl p-5 shadow-sm hover:shadow-lg hover:border-amber-400 transition text-center">
             <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-amber-200 flex items-center justify-center group-hover:scale-110 transition">
-              <img src="https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?w=56&h=56&fit=crop" alt="Matériel" className="w-14 h-14 rounded-full object-cover" />
+              <img src="https://images.unsplash.com/photo-1530267981375-f0de937f5f13?w=56&h=56&fit=crop" alt="Matériel" className="w-14 h-14 rounded-full object-cover" />
             </div>
             <p className="text-sm font-bold text-amber-800">Matériel Agricole</p>
             <p className="text-xs text-amber-600 mt-1">Tracteurs, motopompes, engrais...</p>
