@@ -43,13 +43,14 @@ export class EquipmentController {
     images?: string[];
     contactPhone?: string;
   }) {
-    const user = await this.prisma.user.findUnique({ where: { id: req.user.id }, select: { name: true } });
+    const user = await this.prisma.user.findUnique({ where: { id: req.user.id }, select: { name: true, kycStatus: true } });
     const data = {
       ...body,
       price: body.price || 0,
       images: body.images || [],
       userId: req.user.id,
       userName: user?.name || 'Utilisateur',
+      kycVerified: user?.kycStatus === 'VERIFIED',
     };
 
     const record = await this.prisma.notification.create({

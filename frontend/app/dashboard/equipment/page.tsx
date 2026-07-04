@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../../lib/auth-context';
 import api from '../../../lib/api';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, Phone, MapPin, Search } from 'lucide-react';
+import { Plus, Trash2, Phone, MapPin, Search, Heart } from 'lucide-react';
 
 interface Equipment {
   id: string;
@@ -37,6 +37,7 @@ export default function EquipmentPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState('');
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [form, setForm] = useState({
     title: '', description: '', price: '', condition: 'Neuf',
     category: CATEGORIES[0], location: '', images: [] as string[], imageInput: '', contactPhone: '',
@@ -189,7 +190,26 @@ export default function EquipmentPage() {
           {filtered.map(item => (
             <div key={item.id} className="bg-white rounded-xl shadow hover:shadow-md transition overflow-hidden">
               {item.images?.[0] && (
-                <img src={item.images[0]} alt={item.title} className="w-full h-40 object-cover" />
+                <div className="relative">
+                  <img src={item.images[0]} alt={item.title} className="w-full h-40 object-cover" />
+                  <button
+                    onClick={() => setFavorites(prev => { const s = new Set(prev); s.has(item.id) ? s.delete(item.id) : s.add(item.id); return s; })}
+                    className="absolute top-2 right-2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow hover:scale-110 transition"
+                  >
+                    <Heart className={`w-4 h-4 ${favorites.has(item.id) ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
+                  </button>
+                </div>
+              )}
+              {!item.images?.[0] && (
+                <div className="relative h-40 bg-gray-100 flex items-center justify-center">
+                  <span className="text-4xl">🚜</span>
+                  <button
+                    onClick={() => setFavorites(prev => { const s = new Set(prev); s.has(item.id) ? s.delete(item.id) : s.add(item.id); return s; })}
+                    className="absolute top-2 right-2 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow hover:scale-110 transition"
+                  >
+                    <Heart className={`w-4 h-4 ${favorites.has(item.id) ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
+                  </button>
+                </div>
               )}
               <div className="p-4">
                 <div className="flex justify-between items-start">
@@ -212,6 +232,9 @@ export default function EquipmentPage() {
                   <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {item.contactPhone}</span>
                 </div>
                 <p className="text-xs text-gray-400 mt-1">Par {item.userName} • {new Date(item.createdAt).toLocaleDateString('fr-FR')}</p>
+                {item.kycVerified && (
+                  <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full mt-1">✅ Vérifié</span>
+                )}
               </div>
             </div>
           ))}

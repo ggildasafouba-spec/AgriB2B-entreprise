@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../../lib/auth-context';
 import api from '../../../lib/api';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, MapPin, Briefcase, Clock } from 'lucide-react';
+import { Plus, Trash2, MapPin, Briefcase, Clock, Heart } from 'lucide-react';
 
 interface Classified {
   id: string;
@@ -25,6 +25,8 @@ const TYPES = [
   { value: 'JOB_SEARCH', label: '🔍 Recherche d\'emploi' },
   { value: 'SERVICE', label: '🛠️ Service proposé' },
   { value: 'PARTNERSHIP', label: '🤝 Partenariat' },
+  { value: 'FORMATION', label: '🎓 Formation' },
+  { value: 'FONCIER', label: '🏞️ Foncier / Terrain' },
   { value: 'OTHER', label: '📌 Autre annonce' },
 ];
 
@@ -35,6 +37,7 @@ const CATEGORIES = [
   'Transformation alimentaire',
   'Maintenance / Mécanique',
   'Formation / Conseil',
+  'Foncier / Terrain',
   'Autre',
 ];
 
@@ -44,6 +47,7 @@ export default function ClassifiedsPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [filterType, setFilterType] = useState('');
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [form, setForm] = useState({
     title: '', description: '', type: 'JOB_OFFER', category: CATEGORIES[0],
     location: '', salary: '', contactPhone: '', contactEmail: '',
@@ -92,6 +96,8 @@ export default function ClassifiedsPage() {
       case 'JOB_SEARCH': return 'bg-green-100 text-green-700';
       case 'SERVICE': return 'bg-purple-100 text-purple-700';
       case 'PARTNERSHIP': return 'bg-orange-100 text-orange-700';
+      case 'FORMATION': return 'bg-indigo-100 text-indigo-700';
+      case 'FONCIER': return 'bg-emerald-100 text-emerald-700';
       default: return 'bg-gray-100 text-gray-700';
     }
   };
@@ -195,6 +201,9 @@ export default function ClassifiedsPage() {
                       {typeLabel(item.type)}
                     </span>
                     <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">{item.category}</span>
+                    {(item as any).kycVerified && (
+                      <span className="text-xs text-green-700 bg-green-50 px-2 py-0.5 rounded-full">✅ Vérifié</span>
+                    )}
                   </div>
                   <h3 className="font-bold text-gray-900 text-lg">{item.title}</h3>
                   <p className="text-sm text-gray-600 mt-1">{item.description}</p>
@@ -205,11 +214,19 @@ export default function ClassifiedsPage() {
                     <span>Par {item.userName}</span>
                   </div>
                 </div>
-                {(user?.id === item.userId || user?.role === 'ADMIN') && (
-                  <button onClick={() => handleDelete(item.id)} className="text-red-400 hover:text-red-600 ml-3">
-                    <Trash2 className="w-4 h-4" />
+                <div className="flex items-center gap-2 ml-3">
+                  <button
+                    onClick={() => setFavorites(prev => { const s = new Set(prev); s.has(item.id) ? s.delete(item.id) : s.add(item.id); return s; })}
+                    className="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center hover:scale-110 transition"
+                  >
+                    <Heart className={`w-4 h-4 ${favorites.has(item.id) ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
                   </button>
-                )}
+                  {(user?.id === item.userId || user?.role === 'ADMIN') && (
+                    <button onClick={() => handleDelete(item.id)} className="text-red-400 hover:text-red-600">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}

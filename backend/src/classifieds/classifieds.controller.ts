@@ -43,11 +43,12 @@ export class ClassifiedsController {
     contactPhone?: string;
     contactEmail?: string;
   }) {
-    const user = await this.prisma.user.findUnique({ where: { id: req.user.id }, select: { name: true } });
+    const user = await this.prisma.user.findUnique({ where: { id: req.user.id }, select: { name: true, kycStatus: true } });
     const data = {
       ...body,
       userId: req.user.id,
       userName: user?.name || 'Utilisateur',
+      kycVerified: user?.kycStatus === 'VERIFIED',
     };
 
     const record = await this.prisma.notification.create({
