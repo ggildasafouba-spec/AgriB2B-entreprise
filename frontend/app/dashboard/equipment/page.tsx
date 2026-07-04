@@ -1,9 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../../../lib/auth-context';
-import api from '../../../lib/api';
+import api, { uploadApi } from '../../../lib/api';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, Phone, MapPin, Search, Heart } from 'lucide-react';
+import { Plus, Trash2, Phone, MapPin, Search, Heart, Camera } from 'lucide-react';
 
 interface Equipment {
   id: string;
@@ -43,11 +43,32 @@ export default function EquipmentPage() {
     category: CATEGORIES[0], location: '', images: [] as string[], imageInput: '', contactPhone: '',
     guarantee: '', specs: '', transport: '', deliveryDays: '', shippingCountry: '',
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => { load(); }, []);
 
   const load = () => {
     api.get('/equipment').then(r => setItems(r.data)).catch(() => {}).finally(() => setLoading(false));
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      for (let i = 0; i < Math.min(files.length, 5); i++) {
+        const res = await uploadApi.uploadImage(files[i]);
+        form.images.push(res.data.url);
+        setForm(f => ({ ...f, images: [...f.images] }));
+      }
+      toast.success(`${Math.min(files.length, 5)} photo(s) ajoutée(s)`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erreur lors de l\'upload');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,12 +105,6 @@ export default function EquipmentPage() {
       toast.success('Supprimé');
       load();
     } catch { toast.error('Erreur'); }
-  };
-
-  const addImage = () => {
-    if (form.imageInput.trim()) {
-      setForm(f => ({ ...f, images: [...f.images, f.imageInput.trim()], imageInput: '' }));
-    }
   };
 
   const filtered = items.filter(i =>
@@ -189,20 +204,33 @@ export default function EquipmentPage() {
             <input type="text" value={form.contactPhone} onChange={e => setForm({...form, contactPhone: e.target.value})}
               className="w-full border rounded-lg px-3 py-2" placeholder="+237 6XX XXX XXX" />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">🖼️ Images (URL)</label>
-            <div className="flex gap-2">
-              <input type="text" value={form.imageInput} onChange={e => setForm({...form, imageInput: e.target.value})}
-                className="flex-1 border rounded-lg px-3 py-2 text-sm" placeholder="https://..." />
-              <button type="button" onClick={addImage} className="px-3 py-2 bg-gray-200 rounded-lg text-sm hover:bg-gray-300">+</button>
-            </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">🖼️ Photos du matériel</label>
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center gap-2 px-4 py-3 bg-amber-50 border-2 border-dashed border-amber-300 rounded-xl hover:bg-amber-100 text-amber-700 font-medium text-sm w-full justify-center disabled:opacity-50"
+            >
+              <Camera className="w-5 h-5" />
+              {uploading ? 'Upload en cours...' : 'Prendre une photo ou choisir un fichier'}
+            </button>
+            <p className="text-xs text-gray-400 mt-1">JPEG, PNG ou WebP. Max 5 Mo par photo, 5 photos max.</p>
             {form.images.length > 0 && (
               <div className="flex gap-2 mt-2 flex-wrap">
                 {form.images.map((img, i) => (
                   <div key={i} className="relative">
-                    <img src={img} alt="" className="w-12 h-12 rounded object-cover border" />
+                    <img src={img} alt="" className="w-16 h-16 rounded-lg object-cover border" />
                     <button type="button" onClick={() => setForm(f => ({...f, images: f.images.filter((_, j) => j !== i)}))}
-                      className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">×</button>
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">×</button>
                   </div>
                 ))}
               </div>
