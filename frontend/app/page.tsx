@@ -203,14 +203,14 @@ export default function Home() {
               icon="🚜" color="from-amber-600 to-yellow-700"
               title="Matériel Agricole"
               description="Tracteurs, motopompes, engrais, semences entre professionnels."
-              image="https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?w=400&h=200&fit=crop"
+              image="https://images.unsplash.com/photo-1530267981375-f0de937f5f13?w=400&h=200&fit=crop"
               href="/dashboard/equipment"
             />
             <FeatureCard
               icon="📋" color="from-pink-500 to-rose-600"
               title="Annonces & Emplois"
               description="Offres d'emploi, formations, terrains, services agricoles."
-              image="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=400&h=200&fit=crop"
+              image="https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=400&h=200&fit=crop"
               href="/dashboard/classifieds"
             />
             <FeatureCard
