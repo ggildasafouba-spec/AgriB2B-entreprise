@@ -41,6 +41,7 @@ export default function EquipmentPage() {
   const [form, setForm] = useState({
     title: '', description: '', price: '', condition: 'Neuf',
     category: CATEGORIES[0], location: '', images: [] as string[], imageInput: '', contactPhone: '',
+    guarantee: '', specs: '', transport: '', deliveryDays: '', shippingCountry: '',
   });
 
   useEffect(() => { load(); }, []);
@@ -61,10 +62,15 @@ export default function EquipmentPage() {
         location: form.location || user?.region || '',
         images: form.images,
         contactPhone: form.contactPhone || user?.phone || '',
+        guarantee: form.guarantee || '',
+        specs: form.specs || '',
+        transport: form.transport || '',
+        deliveryDays: form.deliveryDays || '',
+        shippingCountry: form.shippingCountry || '',
       });
       toast.success('Matériel publié !');
       setShowForm(false);
-      setForm({ title: '', description: '', price: '', condition: 'Neuf', category: CATEGORIES[0], location: '', images: [], imageInput: '', contactPhone: '' });
+      setForm({ title: '', description: '', price: '', condition: 'Neuf', category: CATEGORIES[0], location: '', images: [], imageInput: '', contactPhone: '', guarantee: '', specs: '', transport: '', deliveryDays: '', shippingCountry: '' });
       load();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Erreur');
@@ -108,19 +114,19 @@ export default function EquipmentPage() {
 
       {/* Formulaire */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow p-6 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow p-6 mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="md:col-span-2 lg:col-span-3">
             <label className="block text-sm font-medium text-gray-700 mb-1">Titre *</label>
             <input type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} required
               className="w-full border rounded-lg px-3 py-2" placeholder="Ex: Motopompe Diesel 5CV" />
           </div>
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 lg:col-span-3">
             <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
             <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} required
-              className="w-full border rounded-lg px-3 py-2 h-20" placeholder="Décrivez l'état, les caractéristiques..." />
+              className="w-full border rounded-lg px-3 py-2 h-20" placeholder="Décrivez l'état, les caractéristiques, l'utilisation..." />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Prix (FCFA)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Prix (FCFA) *</label>
             <input type="number" value={form.price} onChange={e => setForm({...form, price: e.target.value})}
               className="w-full border rounded-lg px-3 py-2" placeholder="0 = Prix à discuter" />
           </div>
@@ -142,27 +148,69 @@ export default function EquipmentPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Localisation</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">🛡️ Garantie</label>
+            <input type="text" value={form.guarantee} onChange={e => setForm({...form, guarantee: e.target.value})}
+              className="w-full border rounded-lg px-3 py-2" placeholder="Ex: 6 mois, 1 an, Aucune" />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">📋 Fiche technique / Spécifications</label>
+            <textarea value={form.specs} onChange={e => setForm({...form, specs: e.target.value})}
+              className="w-full border rounded-lg px-3 py-2 h-16 text-sm" placeholder="Puissance, dimensions, poids, marque, modèle..." />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">🚛 Moyen de transport</label>
+            <select value={form.transport} onChange={e => setForm({...form, transport: e.target.value})}
+              className="w-full border rounded-lg px-3 py-2">
+              <option value="">-- Choisir --</option>
+              <option>Livraison par le vendeur</option>
+              <option>Transporteur de la plateforme</option>
+              <option>Retrait sur place</option>
+              <option>Expédition nationale</option>
+              <option>Expédition internationale</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">⏱️ Durée de livraison</label>
+            <input type="text" value={form.deliveryDays} onChange={e => setForm({...form, deliveryDays: e.target.value})}
+              className="w-full border rounded-lg px-3 py-2" placeholder="Ex: 2-5 jours, 1 semaine" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">🌍 Pays d&apos;expédition</label>
+            <input type="text" value={form.shippingCountry} onChange={e => setForm({...form, shippingCountry: e.target.value})}
+              className="w-full border rounded-lg px-3 py-2" placeholder="Ex: Cameroun, Afrique de l'Ouest" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">📍 Localisation</label>
             <input type="text" value={form.location} onChange={e => setForm({...form, location: e.target.value})}
               className="w-full border rounded-lg px-3 py-2" placeholder="Ex: Douala, Littoral" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone de contact</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">📞 Téléphone de contact</label>
             <input type="text" value={form.contactPhone} onChange={e => setForm({...form, contactPhone: e.target.value})}
               className="w-full border rounded-lg px-3 py-2" placeholder="+237 6XX XXX XXX" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Images (URL)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">🖼️ Images (URL)</label>
             <div className="flex gap-2">
               <input type="text" value={form.imageInput} onChange={e => setForm({...form, imageInput: e.target.value})}
                 className="flex-1 border rounded-lg px-3 py-2 text-sm" placeholder="https://..." />
-              <button type="button" onClick={addImage} className="px-3 py-2 bg-gray-200 rounded-lg text-sm">+</button>
+              <button type="button" onClick={addImage} className="px-3 py-2 bg-gray-200 rounded-lg text-sm hover:bg-gray-300">+</button>
             </div>
-            {form.images.length > 0 && <p className="text-xs text-gray-400 mt-1">{form.images.length} image(s)</p>}
+            {form.images.length > 0 && (
+              <div className="flex gap-2 mt-2 flex-wrap">
+                {form.images.map((img, i) => (
+                  <div key={i} className="relative">
+                    <img src={img} alt="" className="w-12 h-12 rounded object-cover border" />
+                    <button type="button" onClick={() => setForm(f => ({...f, images: f.images.filter((_, j) => j !== i)}))}
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">×</button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="md:col-span-2 flex gap-3">
-            <button type="submit" className="px-5 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700">Publier</button>
-            <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2 border rounded-lg">Annuler</button>
+          <div className="md:col-span-2 lg:col-span-3 flex gap-3 pt-2 border-t">
+            <button type="submit" className="px-5 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium">Publier l&apos;annonce</button>
+            <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2 border rounded-lg hover:bg-gray-50">Annuler</button>
           </div>
         </form>
       )}
@@ -227,6 +275,17 @@ export default function EquipmentPage() {
                   </span>
                   <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{item.condition}</span>
                 </div>
+                {((item as any).guarantee || (item as any).deliveryDays || (item as any).shippingCountry) && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {(item as any).guarantee && <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full">🛡️ {(item as any).guarantee}</span>}
+                    {(item as any).deliveryDays && <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">⏱️ {(item as any).deliveryDays}</span>}
+                    {(item as any).shippingCountry && <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full">🌍 {(item as any).shippingCountry}</span>}
+                    {(item as any).transport && <span className="text-xs bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full">🚛 {(item as any).transport}</span>}
+                  </div>
+                )}
+                {(item as any).specs && (
+                  <p className="text-xs text-gray-500 mt-2 bg-gray-50 rounded px-2 py-1 line-clamp-2">📋 {(item as any).specs}</p>
+                )}
                 <div className="mt-2 flex items-center gap-3 text-xs text-gray-400">
                   <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {item.location}</span>
                   <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {item.contactPhone}</span>
