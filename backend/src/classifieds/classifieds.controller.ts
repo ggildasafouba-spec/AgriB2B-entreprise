@@ -12,6 +12,19 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ClassifiedsController {
   constructor(private prisma: PrismaService) {}
 
+  @Get(':id')
+  @ApiOperation({ summary: 'Voir une annonce (public — pour partage)' })
+  async findOne(@Param('id') id: string) {
+    const record = await this.prisma.notification.findUnique({ where: { id } });
+    if (!record || !record.title.startsWith('[CLASSIFIED]')) {
+      return null;
+    }
+    try {
+      const data = JSON.parse(record.message);
+      return { id: record.id, ...data, createdAt: record.createdAt };
+    } catch { return null; }
+  }
+
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../../lib/auth-context';
 import api from '../../../lib/api';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, MapPin, Briefcase, Clock, Heart } from 'lucide-react';
+import { Plus, Trash2, MapPin, Briefcase, Clock, Heart, Share2 } from 'lucide-react';
 
 interface Classified {
   id: string;
@@ -215,6 +215,21 @@ export default function ClassifiedsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 ml-3">
+                  <button
+                    onClick={() => {
+                      const url = `${window.location.origin}/classifieds/${item.id}`;
+                      if (navigator.share) {
+                        navigator.share({ title: item.title, text: `${typeLabel(item.type)} — ${item.title}`, url }).catch(() => {});
+                      } else {
+                        navigator.clipboard.writeText(url);
+                        toast.success('Lien copié !');
+                      }
+                    }}
+                    className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center hover:scale-110 transition"
+                    title="Partager"
+                  >
+                    <Share2 className="w-4 h-4 text-blue-600" />
+                  </button>
                   <button
                     onClick={() => setFavorites(prev => { const s = new Set(prev); s.has(item.id) ? s.delete(item.id) : s.add(item.id); return s; })}
                     className="w-8 h-8 bg-gray-50 rounded-full flex items-center justify-center hover:scale-110 transition"
