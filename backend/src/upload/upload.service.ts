@@ -106,12 +106,17 @@ export class UploadService {
     if (!file || !file.buffer) {
       throw new BadRequestException('Aucun fichier fourni');
     }
-    const allowedTypes = ['application/pdf'];
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/jpeg', 'image/png', 'image/webp',
+    ];
     if (!allowedTypes.includes(file.mimetype)) {
-      throw new BadRequestException('Seuls les fichiers PDF sont acceptés.');
+      throw new BadRequestException('Type de fichier non supporté. Acceptés : PDF, Word, JPEG, PNG, WebP.');
     }
     if (file.size > 10 * 1024 * 1024) {
-      throw new BadRequestException('Document trop lourd. Maximum 10 Mo.');
+      throw new BadRequestException('Fichier trop lourd. Maximum 10 Mo.');
     }
 
     return new Promise((resolve, reject) => {

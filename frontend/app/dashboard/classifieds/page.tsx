@@ -167,19 +167,28 @@ export default function ClassifiedsPage() {
               className="w-full border rounded-lg px-3 py-2" placeholder="contact@exemple.com" />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">📄 Document PDF (optionnel)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">📄 Documents & Photos (optionnel)</label>
             <div className="flex items-center gap-3">
               <input
                 type="file"
-                accept="application/pdf"
+                accept="application/pdf,image/jpeg,image/png,image/webp,.doc,.docx"
+                multiple
                 onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
+                  const files = e.target.files;
+                  if (!files || files.length === 0) return;
                   setUploadingDoc(true);
                   try {
-                    const res = await uploadApi.uploadDocument(file);
-                    setForm(f => ({ ...f, documentUrl: res.data.url }));
-                    toast.success('Document uploadé !');
+                    for (let i = 0; i < Math.min(files.length, 5); i++) {
+                      const file = files[i];
+                      let res;
+                      if (file.type === 'application/pdf' || file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+                        res = await uploadApi.uploadDocument(file);
+                      } else {
+                        res = await uploadApi.uploadImage(file);
+                      }
+                      setForm(f => ({ ...f, documentUrl: f.documentUrl ? f.documentUrl + ',' + res.data.url : res.data.url }));
+                    }
+                    toast.success(`${Math.min(files.length, 5)} fichier(s) ajouté(s)`);
                   } catch (err: any) {
                     toast.error(err.response?.data?.message || 'Erreur upload');
                   } finally {
@@ -190,13 +199,17 @@ export default function ClassifiedsPage() {
                 disabled={uploadingDoc}
               />
               {uploadingDoc && <span className="text-xs text-gray-500">Upload en cours...</span>}
-              {form.documentUrl && (
-                <span className="flex items-center gap-1 text-xs text-green-600">
-                  <FileText className="w-3 h-3" /> PDF ajouté ✓
-                </span>
-              )}
             </div>
-            <p className="text-xs text-gray-400 mt-1">Max 10 Mo. Le PDF sera visible uniquement par les membres connectés.</p>
+            {form.documentUrl && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {form.documentUrl.split(',').map((url, i) => (
+                  <span key={i} className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                    <FileText className="w-3 h-3" /> {url.includes('.pdf') ? 'PDF' : 'Photo'} {i + 1} ✓
+                  </span>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-gray-400 mt-1">PDF, photos (JPEG/PNG), Word. Max 10 Mo par fichier, 5 fichiers max.</p>
           </div>
           <div className="md:col-span-2 flex gap-3">
             <button type="submit" className="px-5 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">Publier</button>
@@ -248,10 +261,14 @@ export default function ClassifiedsPage() {
                     <span>Par {item.userName}</span>
                   </div>
                   {(item as any).documentUrl && (
-                    <a href={(item as any).documentUrl} target="_blank" rel="noopener noreferrer"
-                      className="mt-2 inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-100 transition">
-                      <FileText className="w-3.5 h-3.5" /> Télécharger le document PDF
-                    </a>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {(item as any).documentUrl.split(',').map((url: string, i: number) => (
+                        <a key={i} href={url} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-100 transition">
+                          <FileText className="w-3.5 h-3.5" /> {url.includes('.pdf') ? `PDF ${i + 1}` : `Fichier ${i + 1}`}
+                        </a>
+                      ))}
+                    </div>
                   )}
                 </div>
                 <div className="flex items-center gap-2 ml-3">
