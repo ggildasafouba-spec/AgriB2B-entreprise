@@ -188,7 +188,7 @@ export const installmentsApi = {
   markPaid: (paymentId: string) => api.put(`/installments/${paymentId}/pay`),
 };
 
-// Upload (Images)
+// Upload (Images & Documents)
 export const uploadApi = {
   uploadImage: (file: File) => {
     const formData = new FormData();
@@ -201,6 +201,13 @@ export const uploadApi = {
     const formData = new FormData();
     files.forEach(f => formData.append('files', f));
     return api.post('/upload/images', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  uploadDocument: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/upload/document', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },

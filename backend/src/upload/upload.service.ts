@@ -95,4 +95,43 @@ export class UploadService {
       this.logger.warn(`Failed to delete image ${publicId}`);
     }
   }
+
+  /**
+   * Upload un document PDF vers Cloudinary
+   */
+  async uploadDocument(file: Express.Multer.File): Promise<{ url: string; publicId: string }> {
+    if (!this.configured) {
+      throw new BadRequestException('Service d\'upload non configuré.');
+    }
+    if (!file || !file.buffer) {
+      throw new BadRequestException('Aucun fichier fourni');
+    }
+    const allowedTypes = ['application/pdf'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      throw new BadRequestException('Seuls les fichiers PDF sont acceptés.');
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      throw new BadRequestException('Document trop lourd. Maximum 10 Mo.');
+    }
+
+    return new Promise((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        {
+          folder: 'agrib2b/documents',
+          resource_type: 'raw',
+        },
+        (error, result) => {
+          if (error) {
+            this.logger.error(`Cloudinary document upload error: ${error.message}`);
+            reject(new BadRequestException('Erreur lors de l\'upload du document'));
+          } else {
+            resolve({
+              url: result.secure_url,
+              publicId: result.public_id,
+            });
+          }
+        },
+      ).end(file.buffer);
+    });
+  }
 }

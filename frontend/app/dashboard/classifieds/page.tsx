@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../../lib/auth-context';
-import api from '../../../lib/api';
+import api, { uploadApi } from '../../../lib/api';
 import toast from 'react-hot-toast';
-import { Plus, Trash2, MapPin, Briefcase, Clock, Heart, Share2 } from 'lucide-react';
+import { Plus, Trash2, MapPin, Briefcase, Clock, Heart, Share2, FileText } from 'lucide-react';
 
 interface Classified {
   id: string;
@@ -50,8 +50,9 @@ export default function ClassifiedsPage() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [form, setForm] = useState({
     title: '', description: '', type: 'JOB_OFFER', category: CATEGORIES[0],
-    location: '', salary: '', contactPhone: '', contactEmail: '',
+    location: '', salary: '', contactPhone: '', contactEmail: '', documentUrl: '',
   });
+  const [uploadingDoc, setUploadingDoc] = useState(false);
 
   useEffect(() => { load(); }, []);
 
@@ -68,10 +69,11 @@ export default function ClassifiedsPage() {
         contactPhone: form.contactPhone || user?.phone || '',
         contactEmail: form.contactEmail || user?.email || '',
         location: form.location || user?.region || '',
+        documentUrl: form.documentUrl || undefined,
       });
       toast.success('Annonce publiée !');
       setShowForm(false);
-      setForm({ title: '', description: '', type: 'JOB_OFFER', category: CATEGORIES[0], location: '', salary: '', contactPhone: '', contactEmail: '' });
+      setForm({ title: '', description: '', type: 'JOB_OFFER', category: CATEGORIES[0], location: '', salary: '', contactPhone: '', contactEmail: '', documentUrl: '' });
       load();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Erreur');
@@ -164,6 +166,38 @@ export default function ClassifiedsPage() {
             <input type="email" value={form.contactEmail} onChange={e => setForm({...form, contactEmail: e.target.value})}
               className="w-full border rounded-lg px-3 py-2" placeholder="contact@exemple.com" />
           </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">📄 Document PDF (optionnel)</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="file"
+                accept="application/pdf"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setUploadingDoc(true);
+                  try {
+                    const res = await uploadApi.uploadDocument(file);
+                    setForm(f => ({ ...f, documentUrl: res.data.url }));
+                    toast.success('Document uploadé !');
+                  } catch (err: any) {
+                    toast.error(err.response?.data?.message || 'Erreur upload');
+                  } finally {
+                    setUploadingDoc(false);
+                  }
+                }}
+                className="text-sm file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-green-50 file:text-green-700 file:font-medium file:cursor-pointer hover:file:bg-green-100"
+                disabled={uploadingDoc}
+              />
+              {uploadingDoc && <span className="text-xs text-gray-500">Upload en cours...</span>}
+              {form.documentUrl && (
+                <span className="flex items-center gap-1 text-xs text-green-600">
+                  <FileText className="w-3 h-3" /> PDF ajouté ✓
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Max 10 Mo. Le PDF sera visible uniquement par les membres connectés.</p>
+          </div>
           <div className="md:col-span-2 flex gap-3">
             <button type="submit" className="px-5 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">Publier</button>
             <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2 border rounded-lg">Annuler</button>
@@ -213,6 +247,12 @@ export default function ClassifiedsPage() {
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(item.createdAt).toLocaleDateString('fr-FR')}</span>
                     <span>Par {item.userName}</span>
                   </div>
+                  {(item as any).documentUrl && (
+                    <a href={(item as any).documentUrl} target="_blank" rel="noopener noreferrer"
+                      className="mt-2 inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 px-3 py-1.5 rounded-lg hover:bg-green-100 transition">
+                      <FileText className="w-3.5 h-3.5" /> Télécharger le document PDF
+                    </a>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 ml-3">
                   <button

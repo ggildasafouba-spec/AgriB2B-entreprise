@@ -43,4 +43,19 @@ export class UploadController {
     const urls = await this.uploadService.uploadImages(files);
     return { urls };
   }
+
+  @Post('document')
+  @ApiOperation({ summary: 'Upload un document PDF (max 10 Mo)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file', { storage, limits: { fileSize: 10 * 1024 * 1024 } }))
+  async uploadDocument(@UploadedFile() file: Express.Multer.File) {
+    const result = await this.uploadService.uploadDocument(file);
+    return { url: result.url, publicId: result.publicId };
+  }
 }

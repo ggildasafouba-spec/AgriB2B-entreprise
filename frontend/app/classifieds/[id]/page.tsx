@@ -153,6 +153,14 @@ export default function ClassifiedPublicPage() {
                   {item.contactPhone && <p className="text-sm text-gray-700">Téléphone : <span className="font-medium">{item.contactPhone}</span></p>}
                   {item.contactEmail && <p className="text-sm text-gray-700">Email : <span className="font-medium">{item.contactEmail}</span></p>}
                 </div>
+
+                {/* Document PDF */}
+                {(item as any).documentUrl && (
+                  <a href={(item as any).documentUrl} target="_blank" rel="noopener noreferrer"
+                    className="mt-4 inline-flex items-center gap-2 px-4 py-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl hover:bg-blue-100 transition font-medium text-sm">
+                    📄 Télécharger le document PDF
+                  </a>
+                )}
               </>
             ) : (
               <>
@@ -172,7 +180,7 @@ export default function ClassifiedPublicPage() {
                 <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
                   <Lock className="w-8 h-8 text-amber-600 mx-auto mb-3" />
                   <h4 className="font-bold text-gray-900 text-lg mb-2">Inscrivez-vous pour voir l&apos;annonce complète</h4>
-                  <p className="text-sm text-gray-600 mb-4">La description complète et les coordonnées de contact sont réservées aux membres.</p>
+                  <p className="text-sm text-gray-600 mb-4">La description complète, les coordonnées de contact et les documents joints sont réservés aux membres.</p>
                   <div className="flex justify-center gap-3">
                     <Link href="/register" className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700">
                       Créer un compte gratuit
