@@ -86,7 +86,7 @@ export default function Home() {
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6">
               Le marché agricole B2B,<br />
-              <span className="bg-gradient-to-r from-green-300 to-emerald-200 bg-clip-text text-transparent">au meilleur prix.</span>
+              <span className="text-green-300">au meilleur prix.</span>
             </h1>
             <p className="text-lg md:text-xl text-green-100 mb-8 max-w-2xl leading-relaxed">
               La 1ère plateforme qui connecte producteurs, acheteurs et transporteurs au Cameroun. Paiement sécurisé. Livraison suivie. 100% Mobile Money.
@@ -105,15 +105,15 @@ export default function Home() {
           {/* Stats animées avec compteur */}
           <div className="grid grid-cols-3 gap-8 mt-20 max-w-xl">
             <div className="text-center bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-              <p className="text-4xl font-bold bg-gradient-to-b from-white to-green-200 bg-clip-text text-transparent">100+</p>
+              <p className="text-4xl font-bold text-white">100+</p>
               <p className="text-sm text-green-200 mt-1">Utilisateurs actifs</p>
             </div>
             <div className="text-center bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-              <p className="text-4xl font-bold bg-gradient-to-b from-white to-green-200 bg-clip-text text-transparent">50+</p>
+              <p className="text-4xl font-bold text-white">50+</p>
               <p className="text-sm text-green-200 mt-1">Produits en ligne</p>
             </div>
             <div className="text-center bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-              <p className="text-4xl font-bold bg-gradient-to-b from-white to-green-200 bg-clip-text text-transparent">10</p>
+              <p className="text-4xl font-bold text-white">10</p>
               <p className="text-sm text-green-200 mt-1">Régions couvertes</p>
             </div>
           </div>
