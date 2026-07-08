@@ -145,7 +145,8 @@ export class NotchPayService {
    */
   async verifyPayment(reference: string) {
     if (!this.publicKey) {
-      return { status: 'complete', simulated: true };
+      this.logger.warn(`[SIMULATION] verifyPayment called for ${reference} — returning PENDING (not complete)`);
+      return { status: 'pending', simulated: true };
     }
 
     try {
@@ -275,7 +276,7 @@ export class NotchPayService {
    */
   async getTransferStatus(transferId: string) {
     if (!this.publicKey || !this.privateKey) {
-      return { status: 'complete', simulated: true };
+      return { status: 'pending', simulated: true };
     }
 
     try {
