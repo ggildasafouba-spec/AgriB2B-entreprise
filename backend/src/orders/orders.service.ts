@@ -318,25 +318,45 @@ export class OrdersService {
       const seller = await this.prisma.user.findUnique({ where: { id: order.sellerId } });
       if (seller?.phone) {
         try {
-          const channel = seller.phone.startsWith('+23767') || seller.phone.startsWith('+23768')
-            ? 'cm.mtn'
-            : seller.phone.startsWith('+23769')
-              ? 'cm.orange'
-              : 'cm.mtn';
+          // Normaliser le numéro au format +237XXXXXXXXX
+          let phone = seller.phone.replace(/[\s\-().]/g, '');
+          if (phone.startsWith('6') && phone.length === 9) phone = '+237' + phone;
+          if (phone.startsWith('237') && !phone.startsWith('+')) phone = '+' + phone;
+          if (!phone.startsWith('+237')) phone = '+237' + phone.replace(/^\+/, '');
 
-          await this.notchPay.transfer({
+          const channel = phone.startsWith('+23769')
+            ? 'cm.orange'
+            : 'cm.mtn';
+
+          console.log(`[PAYOUT] Envoi de ${sellerAmount} FCFA à ${seller.name} (${phone}) via ${channel}`);
+
+          const result = await this.notchPay.transfer({
             amount: sellerAmount,
             currency: 'XAF',
-            recipientPhone: seller.phone,
+            recipientPhone: phone,
             recipientName: seller.name,
             channel,
             description: `Paiement commande #${id.slice(0, 8)} - AgriB2B`,
             reference: `seller-payout-${id.slice(0, 12)}-${Date.now()}`,
           });
+
+          console.log(`[PAYOUT] Résultat: ${JSON.stringify(result)}`);
         } catch (err: any) {
-          // Log l'erreur mais ne bloque pas — l'admin pourra refaire manuellement
-          console.error(`Payout vendeur échoué pour commande ${id}: ${err.message}`);
+          console.error(`[PAYOUT ÉCHOUÉ] Vendeur ${seller.name} (${seller.phone}), commande ${id}: ${err.message}`);
+          // Notifier l'admin que le payout a échoué
+          const admins = await this.prisma.user.findMany({ where: { role: 'ADMIN' }, select: { id: true } });
+          for (const admin of admins) {
+            await this.prisma.notification.create({
+              data: {
+                userId: admin.id,
+                title: '⚠️ Payout vendeur échoué',
+                message: `Le payout de ${sellerAmount.toLocaleString('fr-FR')} FCFA à ${seller.name} (${seller.phone}) a échoué pour la commande #${id.slice(0, 8)}. Erreur: ${err.message}. Veuillez faire le transfert manuellement.`,
+              },
+            });
+          }
         }
+      } else {
+        console.error(`[PAYOUT] Pas de numéro pour le vendeur ${order.sellerId}`);
       }
 
       // ─── Payout automatique au transporteur (si livraison) ───────────
@@ -345,16 +365,22 @@ export class OrdersService {
         const transporter = await this.prisma.user.findUnique({ where: { id: delivery.transporterId } });
         if (transporter?.phone) {
           try {
-            const channel = transporter.phone.startsWith('+23767') || transporter.phone.startsWith('+23768')
-              ? 'cm.mtn'
-              : transporter.phone.startsWith('+23769')
-                ? 'cm.orange'
-                : 'cm.mtn';
+            // Normaliser le numéro
+            let tPhone = transporter.phone.replace(/[\s\-().]/g, '');
+            if (tPhone.startsWith('6') && tPhone.length === 9) tPhone = '+237' + tPhone;
+            if (tPhone.startsWith('237') && !tPhone.startsWith('+')) tPhone = '+' + tPhone;
+            if (!tPhone.startsWith('+237')) tPhone = '+237' + tPhone.replace(/^\+/, '');
+
+            const channel = tPhone.startsWith('+23769')
+              ? 'cm.orange'
+              : 'cm.mtn';
+
+            console.log(`[PAYOUT TRANSPORT] Envoi de ${delivery.transporterAmount} FCFA à ${transporter.name} (${tPhone}) via ${channel}`);
 
             await this.notchPay.transfer({
               amount: delivery.transporterAmount,
               currency: 'XAF',
-              recipientPhone: transporter.phone,
+              recipientPhone: tPhone,
               recipientName: transporter.name,
               channel,
               description: `Livraison commande #${id.slice(0, 8)} - AgriB2B`,
