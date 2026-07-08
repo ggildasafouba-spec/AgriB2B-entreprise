@@ -439,10 +439,12 @@ export default function OrdersPage() {
                   {/* Étape 2 : Vendeur expédie */}
                   {order.status === 'CONFIRMED' && order.sellerId === user?.id && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">📦 Commande confirmée. Préparez le colis :</p>
+                      <p className="text-sm font-medium text-gray-700 mb-2">
+                        {order.delivery || order.deliveryRequest ? '📦 Commande confirmée. Préparez le colis :' : '📦 Commande confirmée. Le client vient chercher :'}
+                      </p>
                       <button onClick={() => updateStatus(order.id, 'SHIPPED')}
                         className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 font-medium">
-                        🚛 Colis expédié
+                        {order.delivery || order.deliveryRequest ? '🚛 Colis expédié' : '📦 Commande remise au client'}
                       </button>
                     </div>
                   )}
@@ -466,15 +468,23 @@ export default function OrdersPage() {
                   {/* Étape 3 : Acheteur confirme réception */}
                   {order.status === 'SHIPPED' && order.buyerId === user?.id && (
                     <div>
-                      <p className="text-sm font-medium text-gray-700 mb-2">🚛 Votre commande est en route. Avez-vous reçu ?</p>
+                      <p className="text-sm font-medium text-gray-700 mb-2">
+                        {order.delivery || order.deliveryRequest
+                          ? '🚛 Votre commande est en route. Avez-vous reçu ?'
+                          : '📦 Votre commande est prête. Avez-vous récupéré ?'}
+                      </p>
                       <button onClick={() => updateStatus(order.id, 'DELIVERED')}
                         className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 font-medium">
-                        ✅ J'ai bien reçu ma commande
+                        ✅ J&apos;ai bien reçu ma commande
                       </button>
                     </div>
                   )}
                   {order.status === 'SHIPPED' && order.sellerId === user?.id && (
-                    <p className="text-sm text-purple-700 flex items-center gap-2">🚛 Colis expédié. En attente de confirmation de l'acheteur...</p>
+                    <p className="text-sm text-purple-700 flex items-center gap-2">
+                      {order.delivery || order.deliveryRequest
+                        ? '🚛 Colis expédié. En attente de confirmation de l\'acheteur...'
+                        : '📦 Commande remise. En attente de confirmation de l\'acheteur...'}
+                    </p>
                   )}
 
                   {/* Étape 4 : Livré + Avis */}
